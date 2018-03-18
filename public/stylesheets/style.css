@@ -1,0 +1,40 @@
+body {
+  padding: 30px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.info {
+  padding: 6px 8px;
+  font: 14px/16px Arial, Helvetica, sans-serif;
+  background: white;
+  background: rgba(255,255,255,0.8);
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  border-radius: 5px;
+}
+
+.legend {
+  line-height: 18px;
+}
+.legend i {
+  width: 200px;
+  height: 18px;
+  float: left;
+  opacity: 0.7;
+}
+.legend p .left {
+  position: relative;
+  left: 0px;
+}
+.legend p .right {
+  position: relative;
+  left: 20px;
+}

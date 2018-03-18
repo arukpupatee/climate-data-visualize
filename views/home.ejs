@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <% include partials/title %>
+    <% include partials/bootstrap %>
+    <% include partials/leaflet %>
+    <% include partials/chroma %>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <% page_name = 'home' %>
+    <% include partials/navbar %>
+    <div class="container-fluid">
+
+      <div class="row">
+        <div class="col">
+          <h1>Climate Data Visualization</h1>
+        </div>
+      </div>
+
+      <br>
+
+      <div class="row">
+        <div class="col-md-8">
+          <% var attr = attribute %>
+          <% var data = geojson %>
+          <% var sData = stationData %>
+          <% include partials/map %>
+        </div>
+        <div class="col-md-3">
+          <form action='/' method='GET'>
+
+            <div class="form-group row align-items-center">
+              <label for="attribute_select" class="col-md-3 col-form-label">Attribute</label>
+              <div class="col-md-9">
+                <select id="attribute_select" name="attribute_select" class="form-control">
+                  <option <% if(attribute=='Temperature'){ %>selected<% } %>>Temperature</option>
+                  <option <% if(attribute=='Precipitation'){ %>selected<% } %>>Precipitation</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group row align-items-center">
+              <label for="start_date" class="col-md-3 col-form-label">Start Date</label>
+              <div class="col-md-9">
+                <input type="date" class="form-control" id="start_date" name="start_date" min="<%= date.min %>" max="<%= date.max %>" value="<%= date.start %>" onchange="changeEndDate(event);">
+              </div>
+            </div>
+
+            <div class="form-group row align-items-center">
+              <label for="end_date" class="col-md-3 col-form-label">End Date</label>
+              <div class="col-md-9">
+                <input type="date" class="form-control" id="end_date" name="end_date" min="<%= date.min %>" max="<%= date.max %>" value="<%= date.end %>">
+              </div>
+            </div>
+
+            <div class="form-group row align-items-center">
+              <label for="seeing_select" class="col-md-3 col-form-label">Seeing</label>
+              <div class="col-md-6">
+                <select id="seeing_select" name="seeing_select" class="form-control">
+                  <option <% if(seeing=='Maximum'){ %>selected<% } %>>Maximum</option>
+                  <option <% if(seeing=='Mean'){ %>selected<% } %>>Mean</option>
+                  <option <% if(seeing=='Minimum'){ %>selected<% } %>>Minimum</option>
+                </select>
+              </div>
+              <label class="col-md-3 col-form-label">Value</label>
+            </div>
+
+            <div class="form-group row align-items-center">
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Visualize</button>
+              </div>
+            </div>
+
+          </form>
+
+          <div class="row">
+            <div class="col-md-3">
+              <button type="button" class="btn btn-success">Play as Animation</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+<script>
+
+function changeEndDate(event){
+  var startDate = new Date(event.target.value);
+  var endDate = new Date(document.getElementById('end_date').value);
+  if(startDate > endDate){
+    document.getElementById('end_date').value = event.target.value;
+  }
+}
+
+</script>
+
+  </body>
+</html>
