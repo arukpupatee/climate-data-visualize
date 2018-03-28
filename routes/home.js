@@ -4,11 +4,7 @@ var moment = require('moment');
 var grid2geojson = require('grid2geojson');
 
 var ClimateDataInfo = require('../models/ClimateDataInfo');
-var TemperatureData = require('../models/TemperatureData');
-var PrecipitationData = require('../models/PrecipitationData');
-var StationInfo = require('../models/StationInfo');
-var MeantempStationData = require('../models/MeantempStationData');
-var RainStationData = require('../models/RainStationData');
+var StationInfo = require('../models/StationDataInfo');
 
 /* GET home page. */
 router.get('/', async (req, res, next) => {

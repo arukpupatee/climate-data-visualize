@@ -2,8 +2,16 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var stationInfoSchema = new Schema({
+    name: {
+        type: String,
+        required: true
+    },
     variable: {
         type: String,
+        required: true
+    },
+    is_real_data: {
+        type: Boolean,
         required: true
     },
     code: {

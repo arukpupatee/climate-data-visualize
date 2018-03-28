@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <% include ../partials/title %>
+    <% include ../partials/bootstrap %>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <% page_name = 'dataset' %>
+    <% include ../partials/navbar %>
+    <div class="container-fluid">
+
+      <div class="row">
+        <div class="col">
+          <h1>Dataset Management</h1>
+        </div>
+      </div>
+      <br>
+
+      <div class="row">
+        <div class="col">
+          <h2>Dataset</h2>
+        </div>
+      </div>
+      <br>
+      <div class="row">
+        <div class="col-md-5">
+          <div class="form-group row align-items-center">
+            <label for="datasetName" class="col-md-2 col-form-label">Name</label>
+            <div class="col-md-10">
+              <select id="datasetName" class="form-control">
+                <option selected>MPI_RF</option>
+                <option>MPI_RCP45</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <a href="/dataset/create" class="btn btn-primary" role="button">Create New Dataset</a>
+        </div>
+      </div>
+
+
+      <div class="row">
+        <div class="col-md-8">
+
+        </div>
+        <div class="col-md-4">
+          <div class="input-group">
+            <div class="custom-file">
+              <input type="file" class="custom-file-input" id="uploader">
+              <label class="custom-file-label" for="uploader">Choose file</label>
+            </div>
+            <div class="input-group-append">
+              <button class="btn btn-outline-secondary" type="button">Upload</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <br>
+
+    </div>
+  </body>
+</html>

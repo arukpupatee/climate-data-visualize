@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <% include ../partials/title %>
+    <% include ../partials/bootstrap %>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <% page_name = 'dataset' %>
+    <% include ../partials/navbar %>
+    <div class="container-fluid">
+
+      <div class="row">
+        <div class="col">
+          <h1>Dataset Management</h1>
+        </div>
+      </div>
+      <br>
+
+      <div class="row">
+        <div class="col">
+          <h2>Creat New Dataset</h2>
+        </div>
+      </div>
+      <br>
+
+      <div class="row">
+        <div class="col">
+          Upload file that describe about dataset in json format. 
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <a href="/template_files/rcm_dataset.json" target="_blank">Download this file</a> for GCM or RCM dataset example
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <a href="/template_files/station_dataset.json" target="_blank">Download this file</a> for Station dataset example
+        </div>
+      </div>
+      <br>
+
+      <form action='/dataset/create' method='POST' enctype="multipart/form-data">
+
+        <div class="form-group row align-items-center">
+          <label for="datasetType" class="col-md-1 col-form-label">Type</label>
+          <div class="col-md-4">
+            <select name="datasetType" id="datasetType" class="form-control">
+              <option selected>GCM or RCM</option>
+              <option>Station</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group row align-items-center">
+          <label for="uploader" class="col-md-1 col-form-label">File</label>
+          <div class="col-md-8">
+            <div class="custom-file">
+              <input type="file" class="custom-file-input" name="file" id="uploader">
+              <label class="custom-file-label" for="uploader">Choose file</label>
+            </div>
+          </div>
+        </div>
+
+        <br>
+        <div class="row">
+          <div class="col">
+            <button class="btn btn-success" type="submit">Create</button>
+            <a href="/dataset" class="btn btn-danger" role="button">Cancel</a>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </body>
+</html>

@@ -6,13 +6,6 @@ var fs = require('fs');
 
 var moment = require('moment');
 
-var ClimateDataInfo = require('../models/ClimateDataInfo');
-var TemperatureData = require('../models/TemperatureData');
-var PrecipitationData = require('../models/PrecipitationData');
-var StationInfo = require('../models/StationInfo');
-var MeantempStationData = require('../models/MeantempStationData');
-var RainStationData = require('../models/RainStationData');
-
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({
   extended: true

@@ -6,7 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 
-mongoose.connect('mongodb://localhost/climate_visualization', { config: { autoIndex: false} });
+mongoose.connect('mongodb://localhost/climate_data_visualization', { config: { autoIndex: false} });
 mongoose.Promise = global.Promise;
 
 var home = require('./routes/home');

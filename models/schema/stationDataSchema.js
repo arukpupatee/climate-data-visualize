@@ -2,6 +2,10 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var stationDataSchema = new Schema({
+    name: {
+        type: String,
+        required: true
+    },
     variable: {
         type: String,
         required: true
