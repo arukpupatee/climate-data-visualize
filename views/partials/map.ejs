@@ -136,10 +136,10 @@ var map = new Basemap('map', {
 var attribute = <%- JSON.stringify(attr) %>
 var geojson = <%- JSON.stringify(data) %>
 var stationData = <%- JSON.stringify(sData) %>
-if(attribute == 'Temperature'){
+if(attribute == 'tas'){
     map.addTemperature(geojson);
     map.addTemperatureStation(stationData);
-} else if(attribute == 'Precipitation'){
+} else if(attribute == 'pr'){
     map.addPrecipitation(geojson);
     map.addPrecipitationStation(stationData);
 }

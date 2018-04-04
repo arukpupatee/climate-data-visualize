@@ -5,6 +5,7 @@
     <% include partials/bootstrap %>
     <% include partials/leaflet %>
     <% include partials/chroma %>
+    <% include partials/plotly %>
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
@@ -31,11 +32,32 @@
           <form action='/' method='GET'>
 
             <div class="form-group row align-items-center">
+              <label for="dataset_select" class="col-md-3 col-form-label">Dataset</label>
+              <div class="col-md-9">
+                <select id="dataset_select" name="dataset_select" class="form-control">
+                  <option <% if(dataset=='MPI_RF'){ %>selected<% } %>>MPI_RF</option>
+                  <option <% if(dataset=='MPI_RCP45'){ %>selected<% } %>>MPI_RCP45</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group row align-items-center">
               <label for="attribute_select" class="col-md-3 col-form-label">Attribute</label>
               <div class="col-md-9">
                 <select id="attribute_select" name="attribute_select" class="form-control">
-                  <option <% if(attribute=='Temperature'){ %>selected<% } %>>Temperature</option>
-                  <option <% if(attribute=='Precipitation'){ %>selected<% } %>>Precipitation</option>
+                  <option <% if(attribute=='tas'){ %>selected<% } %> value='tas'>Mean Air Temperautre</option>
+                  <option <% if(attribute=='pr'){ %>selected<% } %> value='pr'>Precipitation Flux</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group row align-items-center">
+              <label for="frequency_select" class="col-md-3 col-form-label">Frequency</label>
+              <div class="col-md-9">
+                <select id="frequency_select" name="frequency_select" class="form-control">
+                  <option <% if(frequency=='Daily'){ %>selected<% } %>>Daily</option>
+                  <option <% if(frequency=='Monthly'){ %>selected<% } %>>Monthly</option>
+                  <option <% if(frequency=='Yearly'){ %>selected<% } %>>Yearly</option>
                 </select>
               </div>
             </div>
@@ -55,24 +77,14 @@
             </div>
 
             <div class="form-group row align-items-center">
-              <label for="seeing_select" class="col-md-3 col-form-label">Seeing</label>
-              <div class="col-md-6">
-                <select id="seeing_select" name="seeing_select" class="form-control">
-                  <option <% if(seeing=='Maximum'){ %>selected<% } %>>Maximum</option>
-                  <option <% if(seeing=='Mean'){ %>selected<% } %>>Mean</option>
-                  <option <% if(seeing=='Minimum'){ %>selected<% } %>>Minimum</option>
-                </select>
-              </div>
-              <label class="col-md-3 col-form-label">Value</label>
-            </div>
-
-            <div class="form-group row align-items-center">
               <div class="col-md-2">
                 <button type="submit" class="btn btn-primary">Visualize</button>
               </div>
             </div>
 
           </form>
+
+          
 
           <div class="row">
             <div class="col-md-3">
@@ -81,6 +93,11 @@
           </div>
 
         </div>
+      </div>
+
+      <div class="row">
+        <% var gData = graphData %>
+        <% include partials/graph %>
       </div>
     </div>
 

@@ -24,7 +24,7 @@ var stationDataSchema = new Schema({
     },
     date: {
         type: Date,
-        required: true
+        index: true
     },
     value: {
         type: Number,
@@ -56,8 +56,16 @@ stationDataSchema.statics.getMeanValue = async function (dateStart, dateEnd){
         s_code = data[i].code;
         if (sumData[s_code] == null) {
             sumData[s_code] = data[i];
+            sumData[s_code].startDate = data[i].date;
+            sumData[s_code].endDate = data[i].date;
             count[s_code] = 1;
         } else {
+            if(data[i].date <= sumData[s_code].startDate) {
+                sumData[s_code].startDate = data[i].date;
+            }
+            if(data[i].date >= sumData[s_code].endDate) {
+                sumData[s_code].endDate = data[i].date;
+            }
             sumData[s_code].value = sumData[s_code].value + data[i].value;
             count[s_code]++;
         }
@@ -70,6 +78,35 @@ stationDataSchema.statics.getMeanValue = async function (dateStart, dateEnd){
     });
 
     return meanData;
+}
+
+stationDataSchema.statics.getSumValue = async function (dateStart, dateEnd){
+    var data = await this.findByDateRange(dateStart, dateEnd);
+
+    var sumData = {};
+    for(let i=0; i < data.length; i++) {
+        s_code = data[i].code;
+        if (sumData[s_code] == null) {
+            sumData[s_code] = data[i];
+            sumData[s_code].startDate = data[i].date;
+            sumData[s_code].endDate = data[i].date;
+        } else {
+            if(data[i].date <= sumData[s_code].startDate) {
+                sumData[s_code].startDate = data[i].date;
+            }
+            if(data[i].date >= sumData[s_code].endDate) {
+                sumData[s_code].endDate = data[i].date;
+            }
+            sumData[s_code].value = sumData[s_code].value + data[i].value;
+        }
+    }
+
+    var sumDataList = [];
+    Object.keys(sumData).map((s_code) => {
+        sumDataList.push(sumData[s_code]);
+    });
+
+    return sumDataList;
 }
 
 module.exports = stationDataSchema;

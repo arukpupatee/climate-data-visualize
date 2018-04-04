@@ -6,8 +6,33 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 
-mongoose.connect('mongodb://localhost/climate_data_visualization', { config: { autoIndex: false} });
+mongoose.connect('mongodb://localhost/climate_data_visualization', { config: { autoIndex: false } });
 mongoose.Promise = global.Promise;
+// for autoIndex
+var ClimateDataInfo = require('./models/ClimateDataInfo');
+var StationDataInfo = require('./models/StationDataInfo');
+var ClimateData = require('./models/ClimateData');
+var StationData = require('./models/StationData');
+/*
+var ClimateData_MPI_RF_tas_Daily = ClimateData('MPI_RF','tas','Daily');
+var ClimateData_MPI_RF_pr_Daily = ClimateData('MPI_RF','pr','Daily');
+var ClimateData_MPI_RCP45_tas_Daily = ClimateData('MPI_RCP45','tas','Daily');
+var ClimateData_MPI_RCP45_pr_Daily = ClimateData('MPI_RCP45','pr','Daily');
+var StationData_MPI_RF_meantemp_Daily = ClimateData('MPI_RF','meantemp','Daily');
+var StationData_MPI_RF_rain_Daily = ClimateData('MPI_RF','rain','Daily');
+*/
+/*
+var TemperatureDataMonthly = ClimateData('MPI_RF','tas','Monthly');
+var PrecipitationDataMonthly = ClimateData('MPI_RF','pr','Monthly');
+var MeantempStationMonthly = StationData('MPI_RF','meantemp','Monthly');
+var RainStationMonthly = StationData('MPI_RF','rain','Monthly');
+*/
+/*
+var TemperatureDataYearly = ClimateData('MPI_RF','tas','Yearly');
+var PrecipitationDataYearly = ClimateData('MPI_RF','pr','Yearly');
+var MeantempStationYearly = StationData('MPI_RF','meantemp','Yearly');
+var RainStationYearly = StationData('MPI_RF','rain','Yearly');
+*/
 
 var home = require('./routes/home');
 var train_model = require('./routes/train_model');

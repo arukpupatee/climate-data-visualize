@@ -1,0 +1,21 @@
+<div id="graph" style="height:620px"></div>
+
+<script>
+
+
+var graphData = <%- JSON.stringify(gData) %>
+
+var trace1 = {
+  x: graphData.dateList,
+  y: graphData.valueList,
+  type: 'lines'
+};
+
+var data = [trace1];
+
+var layout = {
+    title: graphData.title
+}
+
+Plotly.newPlot('graph', data, layout);
+</script>
