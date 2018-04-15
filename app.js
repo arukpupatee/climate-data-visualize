@@ -18,8 +18,8 @@ var ClimateData_MPI_RF_tas_Daily = ClimateData('MPI_RF','tas','Daily');
 var ClimateData_MPI_RF_pr_Daily = ClimateData('MPI_RF','pr','Daily');
 var ClimateData_MPI_RCP45_tas_Daily = ClimateData('MPI_RCP45','tas','Daily');
 var ClimateData_MPI_RCP45_pr_Daily = ClimateData('MPI_RCP45','pr','Daily');
-var StationData_MPI_RF_meantemp_Daily = ClimateData('MPI_RF','meantemp','Daily');
-var StationData_MPI_RF_rain_Daily = ClimateData('MPI_RF','rain','Daily');
+var StationData_MPI_RF_meantemp_Daily = StationData('MPI_RF','meantemp','Daily');
+var StationData_MPI_RF_rain_Daily = StationData('MPI_RF','rain','Daily');
 */
 /*
 var TemperatureDataMonthly = ClimateData('MPI_RF','tas','Monthly');

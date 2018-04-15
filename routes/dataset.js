@@ -9,6 +9,7 @@ var ClimateDataInfo = require('../models/ClimateDataInfo');
 var StationDataInfo = require('../models/StationDataInfo');
 var ClimateData = require('../models/ClimateData');
 var StationData = require('../models/StationData');
+var ClimateDataMeanEachMonth = require('../models/ClimateDataMeanEachMonth');
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({
@@ -194,32 +195,101 @@ router.get('/monthly', async (req, res, next) => {
     for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'months')){
         var startDate = new Date(m.format('YYYY-MM-')+'01'+'T00:00:00+07:00');
         var endDate = m.endOf('month').toDate();
+        /*
         console.log("--------------------------");
         console.log(startDate+' to '+endDate);
-        /*
+
         var meanTemperatureValue = await TemperatureDataDaily.getMeanValue(startDate, endDate);
-        console.log(meanTemperatureValue.startDate+' to '+meanTemperatureValue.endDate);
-        
+        //console.log(meanTemperatureValue.startDate+' to '+meanTemperatureValue.endDate);
         await TemperatureDataMonthly.create(meanTemperatureValue);
-        */
-       /*
+        
         var sumPrecipitationValue = await PrecipitationDataDaily.getSumValue(startDate, endDate);
         await PrecipitationDataMonthly.create(sumPrecipitationValue);
-        */
         
-        /*
         var meanMeantempValue = await MeantempStationDaily.getMeanValue(startDate, endDate);
-        console.log(meanMeantempValue);
-        
         await MeantempStationMonthly.create(meanMeantempValue);
-        */
-       /*
+        
         var sumRainValue = await RainStationDaily.getSumValue(startDate, endDate);
         await RainStationMonthly.create(sumRainValue);
         */
-        
     }
+});
+
+router.get('/mean_each_month', async (req, res, next) => {
+
+    res.send('mean_each_month');
     
+    //mean MPI_RF
+    var TemperatureDataMonthly = ClimateData('MPI_RF','tas','Monthly');
+    var PrecipitationDataMonthly = ClimateData('MPI_RF','pr','Monthly');
+
+    var TemperatureDataMeanEachMonth = ClimateDataMeanEachMonth('MPI_RF', 'tas');
+    var PrecipitationDataMeanEachMonth = ClimateDataMeanEachMonth('MPI_RF', 'pr');
+    
+    var start_date = moment('1970-01-01');
+    var end_date = moment('2006-01-01');
+
+    var countT = [0,0,0,0,0,0,0,0,0,0,0,0];
+    var countP = [0,0,0,0,0,0,0,0,0,0,0,0];
+
+    var sumTemperatureEachMonth = null;
+    var sumPrecipitationEachMonth = null;
+
+    for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'years')){
+        var startDate = new Date(m.format('YYYY')+'-01-01'+'T00:00:00+06:59');
+        var endDate = m.endOf('year').toDate();
+        console.log(startDate+' to '+endDate);
+
+        let temperatureEachMonth = await await TemperatureDataMonthly.getAreaMeanValueList(startDate, endDate);
+        let valueTemperature = temperatureEachMonth.valueList;
+
+        let precipitationEachMonth = await await PrecipitationDataMonthly.getAreaMeanValueList(startDate, endDate);
+        let valuePrecipitation = precipitationEachMonth.valueList;
+
+        if (sumTemperatureEachMonth == null) {
+            sumTemperatureEachMonth = valueTemperature;
+        } else {
+            for(let i=0; i<value.lenth; i++){
+                sumTemperatureEachMonth[i] = sumTemperatureEachMonth[i] + valueTemperature[i]
+                countT[i] = countT[i] + 1;
+            }
+        }
+
+        if (sumPrecipitationEachMonth == null) {
+            sumPrecipitationEachMonth = valuePrecipitation;
+        } else {
+            for(let i=0; i<value.lenth; i++){
+                sumPrecipitationEachMonth[i] = sumPrecipitationEachMonth[i] + valuePrecipitation[i]
+                countP[i] = countP[i] + 1;
+            }
+        }
+    }
+
+    var meanTemperatureEachMonth = []
+    for(let i=0; i<value.lenth; i++){
+        meanTemperatureEachMonth.append(sumTemperatureEachMonth[i]/countT[i]);
+    }
+
+    var meanPrecipitationEachMonth = []
+    for(let i=0; i<value.lenth; i++){
+        meanPrecipitationEachMonth.append(sumPrecipitationEachMonth[i]/countP[i]);
+    }
+
+    var monthList = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    TemperatureDataMeanEachMonth.create({
+        name: 'MPI_RF',
+        variable: 'tas',
+        month: monthList,
+        value: meanTemperatureEachMonth
+    });
+
+    PrecipitationDataMeanEachMonth.create({
+        name: 'MPI_RF',
+        variable: 'pr',
+        month: monthList,
+        value: meanPrecipitationEachMonth
+    });
 });
 
 router.get('/yearly', async (req, res, next) => {
@@ -241,27 +311,20 @@ router.get('/yearly', async (req, res, next) => {
         var startDate = new Date(m.format('YYYY')+'-01-01'+'T00:00:00+06:59');
         var endDate = m.endOf('year').toDate();
         console.log(startDate+' to '+endDate);
-        /*
+        
         var meanTemperatureValue = await TemperatureDataMonthly.getMeanValue(startDate, endDate);
         console.log(meanTemperatureValue.startDate+' to '+meanTemperatureValue.endDate);
         await TemperatureDataYearly.create(meanTemperatureValue);
-        */
-       /*
+        
         var sumPrecipitationValue = await PrecipitationDataMonthly.getSumValue(startDate, endDate);
         await PrecipitationDataYearly.create(sumPrecipitationValue);
-        */
         
-        /*
         var meanMeantempValue = await MeantempStationMonthly.getMeanValue(startDate, endDate);
         await MeantempStationYearly.create(meanMeantempValue);
-        */
-       /*
+        
         var sumRainValue = await RainStationMonthly.getSumValue(startDate, endDate);
         await RainStationYearly.create(sumRainValue);
-        */
-        
     }
-    
 });
 
 module.exports = router;

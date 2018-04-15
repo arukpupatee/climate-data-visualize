@@ -7,6 +7,7 @@ var ClimateDataInfo = require('../models/ClimateDataInfo');
 var StationInfo = require('../models/StationDataInfo');
 var ClimateData = require('../models/ClimateData');
 var StationData = require('../models/StationData');
+var ClimateDataMeanEachMonth = require('../models/ClimateDataMeanEachMonth');
 
 /* GET home page. */
 router.get('/', async (req, res, next) => {
@@ -58,6 +59,7 @@ router.get('/', async (req, res, next) => {
 
   obj.graphData = await ClimateData(obj.dataset, obj.attribute, obj.frequency).getAreaMeanValueList(dateStart, dateEnd);
   obj.graphData.title = 'Mean '+obj.attribute+' from '+obj.date.start+' to '+obj.date.end;
+
   res.render('home', obj);
 });
 
