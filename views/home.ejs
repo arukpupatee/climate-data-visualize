@@ -6,6 +6,7 @@
     <% include partials/leaflet %>
     <% include partials/chroma %>
     <% include partials/plotly %>
+    <% include partials/air-datepicker %>
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
@@ -19,37 +20,50 @@
         </div>
       </div>
 
-      <br>
       <form action="/" method="GET">
       <div class="row">
 
         <div class="col-md-3">
           <div class="row">
-            <label for="dataset_select" class="col-md-3 col-form-label">Dataset</label>
+            <label for="dataset" class="col-md-3 col-form-label">Dataset</label>
             <div class="col-md-9">
-              <select id="dataset_select" name="dataset_select" class="form-control form-control-sm">
-                <option <% if(dataset=='MPI_RF'){ %>selected<% } %>>MPI_RF</option>
-                <option <% if(dataset=='MPI_RCP45'){ %>selected<% } %>>MPI_RCP45</option>
+              <select id="dataset" name="dataset" class="form-control form-control-sm" onchange="changeDataset(event);">
+                <option selected><%= selector[0].dataset %></option>
+                <% for(var i=1; i<selector.length; i++){ %>
+                  <option><%= selector[i].dataset %></option>
+                <% } %>
               </select>
             </div>
 
           </div>
         </div>
 
-        <div class="col-md-5">
+        <div class="col-md-4">
           <div class="row">
-            <label for="attribute_select" class="col-md-2 col-form-label">Attribute</label>
+            <label for="geoVariable" class="col-md-3 col-form-label">Geo Variable</label>
             <div class="col-md-9">
-              <select id="attribute_select" name="attribute_select" class="form-control form-control-sm">
-                <option <% if(attribute=='tas'){ %>selected<% } %> value='tas'>Mean Air Temperautre</option>
-                <option <% if(attribute=='pr'){ %>selected<% } %> value='pr'>Precipitation Flux</option>
+              <select id="geoVariable" name="geoVariable" class="form-control form-control-sm">
+                <option selected value='<%= selector[0].geoVariables[0].name %>'><%= selector[0].geoVariables[0].longName %></option>
+                <% for(var i=1; i<selector[0].geoVariables.length; i++){ %>
+                  <option value='<%= selector[0].geoVariables[i].name %>'><%= selector[0].geoVariables[i].longName %> %></option>
+                <% } %>
               </select>
             </div>
-
           </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-4">
+          <div class="row">
+            <label for="stationVariable" class="col-md-2 col-form-label">Station</label>
+            <div class="col-md-9">
+              <select id="stationVariable" name="stationVariable" class="form-control form-control-sm">
+                <option selected><%= selector[0].stationVariables[0] %></option>
+                <% for(var i=1; i<selector[0].stationVariables.length; i++){ %>
+                  <option><%= selector[0].stationVariables[i] %> %></option>
+                <% } %>
+              </select>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -58,28 +72,30 @@
 
         <div class="col-md-3">
           <div class="row">
-            <label for="frequency_select" class="col-md-3 col-form-label">Frequency</label>
+            <label for="frequency" class="col-md-3 col-form-label">Frequency</label>
             <div class="col-md-9">
-              <select id="frequency_select" name="frequency_select" class="form-control form-control-sm">
-                <option <% if(frequency=='Daily'){ %>selected<% } %>>Daily</option>
-                <option <% if(frequency=='Monthly'){ %>selected<% } %>>Monthly</option>
-                <option <% if(frequency=='Yearly'){ %>selected<% } %>>Yearly</option>
+              <select id="frequency" name="frequency" class="form-control form-control-sm" onchange="changeFrequency(event);">
+                <option selected><%= selector[0].frequency[0] %></option>
+                <% for(var i=1; i<selector[0].frequency.length; i++){ %>
+                  <option><%= selector[0].frequency[i] %> %></option>
+                <% } %>
               </select>
             </div>
 
           </div>
         </div>
 
-        <div class="col-md-5">
+        <div class="col-md-4">
           <div class="row">
-            <label for="start_date" class="col-md-2 col-form-label">From</label>
-            <div class="col-md-4">
-              <input type="date" class="form-control form-control-sm" id="start_date" name="start_date" min="<%= date.min %>" max="<%= date.max %>" value="<%= date.start %>" onchange="changeEndDate(event);">
+
+            <label for="date" class="col-md-3 col-form-label">Date</label>
+            <div class="col-md-9">
+              <input type="text" id='date' name='date' 
+                class="form-control form-control-sm datepicker-here"
+                data-language='en'
+                data-position='bottom left'/>
             </div>
-            <label for="end_date" class="col-md-1 col-form-label">To</label>
-            <div class="col-md-4">
-              <input type="date" class="form-control form-control-sm" id="end_date" name="end_date" min="<%= date.min %>" max="<%= date.max %>" value="<%= date.end %>">
-            </div>
+
           </div>
         </div>
 
@@ -90,22 +106,23 @@
       </div>
       </form>
 
+      <div class='collapse' id='datepicker-collapse'>
+        <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+      </div>
+
       <div class="row">
         <div class="col-md-7">
-          <% var attr = attribute %>
-          <% var data = geojson %>
-          <% var sData = stationData %>
           <div id="map" class="map"></div>
         </div>
         <div class="col-md-5">
           <div class="row">
             <div class="col">
-              <div id="graph1" class="graph"></div>
+              <div id="graphData" class="graph"></div>
             </div>
           </div>
           <div class="row">
             <div class="col">
-              <div id="graph2" class="graph"></div>
+              <div id="graphEachMonth" class="graph"></div>
             </div>
           </div>
         </div>
@@ -113,31 +130,118 @@
     </div>
 
 <script>
-  function changeEndDate(event){
-    var startDate = new Date(event.target.value);
-    var endDate = new Date(document.getElementById('end_date').value);
-    if(startDate > endDate){
-      document.getElementById('end_date').value = event.target.value;
+
+  var selector_data = <%- JSON.stringify(selector) %>
+  var selector_group = {}
+  for(let i=0; i<selector_data.length; i++){ // convert array to json
+    selector_group[selector_data[i].dataset] = selector_data[i]
+  }
+
+  function expand(){
+    //document.getElementById('datepicker-collapse').innerHTML = '<br><br><br><br><br><br><br><br><br><br><br><br>'
+    $('#datepicker-collapse').collapse('show');
+  }
+  function collapse(){
+    //document.getElementById('datepicker-collapse').innerHTML = ''
+    $('#datepicker-collapse').collapse('hide');
+  }
+  var datepickerOptions = {
+    language: 'en',
+    minView: 'years',
+    view: 'years',
+    dateFormat: 'yyyy',
+    range: true,
+    multipleDatesSeparator: ' to ',
+    minDate: new Date(selector_data[0].date.min),
+    maxDate: new Date(selector_data[0].date.max),
+    position: 'bottom left',
+    onShow: function(dp, animationComplete){
+      expand();
+    },
+    onHide: function(dp, animationComplete){
+      collapse();
     }
   }
+  var dpicker;
+  var startDate = datepickerOptions.minDate;
+  var endDate = datepickerOptions.maxDate;
+  setTimeout(function(){
+    dpicker = $('#date').datepicker(datepickerOptions).data('datepicker');
+    dpicker.selectDate([startDate, endDate]);
+  }, 500);
+
+  function changeDataset(event){
+    var selected = selector_group[event.target.value];
+    
+    var geoVariableSelector = document.getElementById('geoVariable')
+    while(geoVariableSelector.options.length){
+      geoVariableSelector.remove(0);
+    }
+    for(let i=0; i<selected.geoVariables.length; i++){
+      let option = document.createElement("option");
+      option.value = selected.geoVariables[i].name;
+      option.text = selected.geoVariables[i].longName;
+      geoVariableSelector.add(option);
+    }
+
+    var stationVariableSelector = document.getElementById('stationVariable')
+    while(stationVariableSelector.options.length){
+      stationVariableSelector.remove(0);
+    }
+    for(let i=0; i<selected.stationVariables.length; i++){
+      let option = document.createElement("option");
+      option.text = selected.stationVariables[i];
+      stationVariableSelector.add(option);
+    }
+
+    datepickerOptions.minDate = new Date(selected.date.min);
+    datepickerOptions.maxDate = new Date(selected.date.max);
+    startDate = datepickerOptions.minDate;
+    endDate = datepickerOptions.maxDate;
+    dpicker = $('#date').datepicker(datepickerOptions).data('datepicker');
+    dpicker.selectDate([startDate, endDate]);
+  }
+
+  function changeFrequency(event){
+    var frequency = event.target.value;
+    var date = document.getElementById('date').value;
+    startDate = new Date(date.split(' to ')[0]);
+    endDate = new Date(date.split(' to ')[1]);
+    if(frequency == 'Yearly'){
+      datepickerOptions.minView = 'years';
+      datepickerOptions.view = 'years';
+      datepickerOptions.dateFormat = 'yyyy'
+    } else if(frequency == 'Monthly'){
+      datepickerOptions.minView = 'months';
+      datepickerOptions.view = 'months';
+      datepickerOptions.dateFormat = 'yyyy-mm'
+    } else if(frequency == 'Daily'){
+      datepickerOptions.minView = 'days';
+      datepickerOptions.view = 'days';
+      datepickerOptions.dateFormat = 'yyyy-mm-dd'
+    }
+    dpicker = $('#date').datepicker(datepickerOptions).data('datepicker');
+    dpicker.selectDate([startDate, endDate]);
+  }
+
+  
 </script>
 
 <script>
+  /* graph data */
   var gData = <%- JSON.stringify(graphData) %>
-
-  var trace1 = {
+  var trace = {
     x: gData.dateList,
     y: gData.valueList,
     type: 'lines'
   };
 
-  var data = [trace1];
+  var data = [trace];
 
   var layout = {
     title: gData.title,
     xaxis: {
       autorange: true,
-      type: 'date'
     },
     yaxis: {
       autorange: true,
@@ -145,9 +249,31 @@
       type: 'linear'
     }
   };
+  Plotly.newPlot('graphData', data, layout);
 
-  Plotly.newPlot('graph1', data, layout);
-  Plotly.newPlot('graph2', data, layout);
+  /* graph each month */
+  var gEachMonth = <%- JSON.stringify(graphEachMonthData) %>
+  trace = {
+    x: gEachMonth.monthList,
+    y: gEachMonth.valueList,
+    type: 'lines'
+  };
+
+  data = [trace];
+
+  layout = {
+    title: gEachMonth.title,
+    xaxis: {
+      autorange: true,
+      type: 'string'
+    },
+    yaxis: {
+      autorange: true,
+      range: [0, 30],
+      type: 'linear'
+    }
+  };
+  Plotly.newPlot('graphEachMonth', data, layout);
 </script>
 
 <script>
@@ -295,7 +421,7 @@
       preferCanvas: true
   });
 
-  var attr = <%- JSON.stringify(attribute) %>
+  var attr = <%- JSON.stringify(selector[0].geoVariables[0].name) %>
   var data = <%- JSON.stringify(geojson) %>
   var sData = <%- JSON.stringify(stationData) %>
   if(attr == 'tas'){

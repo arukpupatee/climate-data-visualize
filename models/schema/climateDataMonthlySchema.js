@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
+var moment = require('moment');
 
 var climateDataSchema = new Schema({
     name: {
@@ -73,7 +74,7 @@ climateDataSchema.statics.getAreaMeanValueList = async function (dateStart, date
     var valueList = [];
     var dateList = [];
 
-    for(let d=1; d < data.length; d++) {
+    for(let d=0; d < data.length; d++) {
         let value = data[d].value;
         let sumValue = 0;
         for(let r=0; r < value.length; r++) {
@@ -83,7 +84,7 @@ climateDataSchema.statics.getAreaMeanValueList = async function (dateStart, date
         }
         let meanValue = sumValue/ (value.length * value[0].length)
         valueList.push(meanValue);
-        dateList.push(data[d].startDate);
+        dateList.push(moment(data[d].startDate).format('YYYY-MM'));
     }
 
     return {
