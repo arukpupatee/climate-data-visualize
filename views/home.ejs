@@ -7,6 +7,7 @@
     <% include partials/chroma %>
     <% include partials/plotly %>
     <% include partials/air-datepicker %>
+    <% include partials/moment %>
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
@@ -20,7 +21,6 @@
         </div>
       </div>
 
-      <form action="/" method="GET">
       <div class="row">
 
         <div class="col-md-3">
@@ -100,11 +100,10 @@
         </div>
 
         <div class="col-md-3">
-          <button type="submit" class="btn btn-primary">Visualize</button>
+          <button type="button" class="btn btn-primary" onclick='visualize()'>Visualize</button>
         </div>
 
       </div>
-      </form>
 
       <div class='collapse' id='datepicker-collapse'>
         <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
@@ -131,20 +130,121 @@
 
 <script>
 
+  class Basemap {
+    constructor(rootTag, options) {
+      options.center = L.latLngBounds(options.maxBounds).getCenter();
+      this.map = L.map(rootTag, options);
+      this.layer = {}
+      this.layer.basemap = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.{ext}', {
+          ext: 'png'
+      });
+      this.layer.geojson = [];
+      this.marker = [];
+      this.legend = [];
+      this.map.addLayer(this.layer.basemap);
+    }
+    addGeoJSON(geojson, options) {
+      let geojsonLayer = L.geoJSON(geojson, options);
+      this.map.addLayer(geojsonLayer);
+      this.layer.geojson.push(geojsonLayer);
+    }
+    addClimateData(geojson, color, range, discrete, variable_unit) {
+      /*
+        geojson = grid climate data in geojson
+        color = color of scale ex 'RdBu' , ['blue','teal','pink','red']
+        range = [startValue, endValue]
+        discrete = seperate gradient color to discrete color
+      */
+      let scale = chroma.scale(color).domain(range).classes(discrete);
+      this.addGeoJSON(geojson, {
+        style: function (feature) {
+          let s = {};
+          s.fillColor = scale(feature.properties.value).hex();
+          s.fillOpacity = 0.8;
+          s.stroke = false;
+          s.fillRule = 'nonzero';
+          return s;
+        }
+      });
+
+      var map = this.map;
+      var legend = L.control({position: 'topright'});
+      legend.onAdd = function (map) {
+        let div = L.DomUtil.create('div', 'info legend');
+        let colors = scale.colors(discrete);
+        let rangeNumber = [];
+        for(let i=0; i<discrete; i++) {
+          let r = range[0] + ((range[1]-range[0])*i)/discrete
+          rangeNumber.push(r)
+        }
+
+        for(let i=0; i<colors.length; i++) {
+          div.innerHTML += '<i style="background:' + colors[i] + '"></i> ';
+          if(i==0) {
+            div.innerHTML += 'below ' + rangeNumber[i] + ' ' + variable_unit + '<br>';
+          } else if(i!=colors.length-1) {
+            div.innerHTML += rangeNumber[i] + '&ndash;' + rangeNumber[i + 1] + ' ' + variable_unit + '<br>';
+          } else {
+            div.innerHTML += 'over ' + rangeNumber[i] + ' ' + variable_unit;
+          }
+        }
+
+        return div;
+      };
+      legend.addTo(map);
+      this.legend.push(legend);
+    }
+    removeClimateData(){
+      let geojsonLayer = this.layer.geojson.pop();
+      this.map.removeLayer(geojsonLayer);
+      let legend = this.legend.pop();
+      this.map.removeControl(legend);
+    }
+    addStation(stationArray, variable, variable_unit) {
+      var icn = new L.Icon.Default;
+      icn.options.iconSize = [10,20];
+      icn.options.iconAnchor = [0,0];
+      icn.options.shadowSize = [0,0];
+      icn.options.popupAnchor = [5,0];
+      for(let i=0; i < stationArray.length; i++) {
+        let stationData = stationArray[i];
+        let map = this.map
+        
+        let markerOptions = {
+          title: stationData.code,
+          icon: icn
+        }
+        let marker;
+        if(variable != 'Rain'){
+          marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
+            .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>'+variable+': '+stationData.value+' '+variable_unit);  
+        } else {
+          marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
+            .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>'+variable+': '+((stationData.value==1)?'Fall':'Not fall'));  
+        }
+        
+        this.marker.push(marker);
+      }
+    }
+    removeStation() {
+      let stationLength = this.marker.length
+      for(let i=0; i < stationLength; i++) {
+        let marker = this.marker.pop()
+        this.map.removeLayer(marker);
+      }
+    }
+  }
+
+</script>
+
+<script>
+
   var selector_data = <%- JSON.stringify(selector) %>
   var selector_group = {}
   for(let i=0; i<selector_data.length; i++){ // convert array to json
     selector_group[selector_data[i].dataset] = selector_data[i]
   }
 
-  function expand(){
-    //document.getElementById('datepicker-collapse').innerHTML = '<br><br><br><br><br><br><br><br><br><br><br><br>'
-    $('#datepicker-collapse').collapse('show');
-  }
-  function collapse(){
-    //document.getElementById('datepicker-collapse').innerHTML = ''
-    $('#datepicker-collapse').collapse('hide');
-  }
   var datepickerOptions = {
     language: 'en',
     minView: 'years',
@@ -156,10 +256,10 @@
     maxDate: new Date(selector_data[0].date.max),
     position: 'bottom left',
     onShow: function(dp, animationComplete){
-      expand();
+      $('#datepicker-collapse').collapse('show');
     },
     onHide: function(dp, animationComplete){
-      collapse();
+      $('#datepicker-collapse').collapse('hide');
     }
   }
   var dpicker;
@@ -211,226 +311,207 @@
       datepickerOptions.minView = 'years';
       datepickerOptions.view = 'years';
       datepickerOptions.dateFormat = 'yyyy'
+      climateOptions['pr'].range = [2000, 4000]
     } else if(frequency == 'Monthly'){
       datepickerOptions.minView = 'months';
       datepickerOptions.view = 'months';
       datepickerOptions.dateFormat = 'yyyy-mm'
+      climateOptions['pr'].range = [100, 500]
     } else if(frequency == 'Daily'){
       datepickerOptions.minView = 'days';
       datepickerOptions.view = 'days';
       datepickerOptions.dateFormat = 'yyyy-mm-dd'
+      climateOptions['pr'].range = [0, 100]
     }
     dpicker = $('#date').datepicker(datepickerOptions).data('datepicker');
     dpicker.selectDate([startDate, endDate]);
   }
 
-  
+  function visualize() {
+    let frequency = $('#frequency').val()
+    let date = $('#date').val();
+    let startDate;
+    let endDate;
+    if(frequency == 'Yearly') {
+      //startDate = date.split(' to ')[0] + '-01-01T23:59:59.000Z';
+      //endDate = date.split(' to ')[1] + '-12-31T23:59:59.000Z'
+      startDate = moment(new Date(date.split(' to ')[0])).startOf('year').format('YYYY-MM-DD')+'T00:00:00.000Z';
+      endDate = moment(new Date(date.split(' to ')[1])).endOf('year').format('YYYY-MM-DD')+'T23:59:59.000Z';
+    } else if(frequency == 'Monthly') {
+      //startDate = date.split(' to ')[0] + '-01T23:59:59.000Z';
+      startDate = moment(new Date(date.split(' to ')[0])).startOf('month').format('YYYY-MM-DD')+'T00:00:00.000Z';
+      endDate = moment(new Date(date.split(' to ')[1])).endOf('month').format('YYYY-MM-DD')+'T23:59:59.000Z';
+    } else {
+      startDate = moment(new Date(date.split(' to ')[0])).format('YYYY-MM-DD')+'T00:00:00.000Z';
+      endDate = moment(new Date(date.split(' to ')[1])).format('YYYY-MM-DD')+'T23:59:59.000Z';
+    }
+    $.ajax({
+      url: '/api/geodata',
+      data: {
+        dataset: $('#dataset').val(),
+        geoVariable: $('#geoVariable').val(),
+        frequency: frequency,
+        startDate: startDate,
+        endDate: endDate
+      },
+      success: function(d) {
+        map.removeClimateData();
+        plotClimate(d.attribute, d.data, climateOptions);
+      }
+    });
+    $.ajax({
+      url: '/api/station',
+      data: {
+        dataset: $('#dataset').val(),
+        stationVariable: $('#stationVariable').val(),
+        frequency: frequency,
+        startDate: startDate,
+        endDate: endDate
+      },
+      success: function(d) {
+        map.removeStation();
+        plotStation(d.attribute, d.data, stationOptions);
+      }
+    });
+    $.ajax({
+      url: '/api/graphData',
+      data: {
+        dataset: $('#dataset').val(),
+        geoVariable: $('#geoVariable').val(),
+        frequency: frequency,
+        startDate: startDate,
+        endDate: endDate
+      },
+      success: function(d) {
+        plotGraph(d.data);
+      }
+    });
+
+    Plotly.purge('graphEachMonth');
+    if(frequency == 'Yearly') {
+      $.ajax({
+        url: '/api/graphEachMonth',
+        data: {
+          dataset: $('#dataset').val(),
+          geoVariable: $('#geoVariable').val(),
+          frequency: frequency,
+          startDate: startDate,
+          endDate: endDate
+        },
+        success: function(d) {
+          plotGraphEachMonth(d.data);
+        }
+      });
+    }
+  }
 </script>
 
 <script>
   /* graph data */
-  var gData = <%- JSON.stringify(graphData) %>
-  var trace = {
-    x: gData.dateList,
-    y: gData.valueList,
-    type: 'lines'
-  };
+  var graphData = <%- JSON.stringify(graphData) %>
+  function plotGraph(gData){
+    let trace = {
+      x: gData.dateList,
+      y: gData.valueList,
+      type: 'lines'
+    };
 
-  var data = [trace];
+    let data = [trace];
 
-  var layout = {
-    title: gData.title,
-    xaxis: {
-      autorange: true,
-    },
-    yaxis: {
-      autorange: true,
-      range: [0, 30],
-      type: 'linear'
-    }
-  };
-  Plotly.newPlot('graphData', data, layout);
+    let layout = {
+      title: gData.title,
+      xaxis: {
+        autorange: true,
+        type: 'category'
+      },
+      yaxis: {
+        autorange: true,
+        range: [0, 30],
+        type: 'linear'
+      }
+    };
+    Plotly.newPlot('graphData', data, layout);
+  }
+  plotGraph(graphData);
 
   /* graph each month */
   var gEachMonth = <%- JSON.stringify(graphEachMonthData) %>
-  trace = {
-    x: gEachMonth.monthList,
-    y: gEachMonth.valueList,
-    type: 'lines'
-  };
+  function plotGraphEachMonth(gData){
+    let trace = {
+      x: gData.monthList,
+      y: gData.valueList,
+      type: 'lines'
+    };
 
-  data = [trace];
+    let data = [trace];
 
-  layout = {
-    title: gEachMonth.title,
-    xaxis: {
-      autorange: true,
-      type: 'string'
-    },
-    yaxis: {
-      autorange: true,
-      range: [0, 30],
-      type: 'linear'
-    }
-  };
-  Plotly.newPlot('graphEachMonth', data, layout);
-</script>
-
-<script>
-  class Basemap {
-    constructor(rootTag, options) {
-        options.center = L.latLngBounds(options.maxBounds).getCenter();
-        this.map = L.map(rootTag, options);
-        this.layer = {}
-        this.layer.basemap = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.{ext}', {
-            ext: 'png'
-        });
-        this.layer.geojson = [];
-        this.marker = [];
-        this.map.addLayer(this.layer.basemap);
-    }
-    addGeoJSON(geojson, options) {
-        var geojsonLayer = L.geoJSON(geojson, options);
-        this.map.addLayer(geojsonLayer);
-        this.layer.geojson.push(geojsonLayer);
-
-        
-    }
-    addTemperature(geojson) {
-        var startDomain = 5;
-        var endDomain = 35;
-        var scale = chroma.scale('RdBu').domain([endDomain, startDomain]);
-        this.addGeoJSON(geojson, {
-            style: function (feature) {
-                var s = {};
-                s.fillColor = scale(feature.properties.value).hex();
-                s.fillOpacity = 0.8;
-                s.stroke = false;
-                s.fillRule = 'nonzero';
-                return s;
-            }
-        });
-
-        var map = this.map;
-        var legend = L.control({position: 'bottomright'});
-        legend.onAdd = function (map) {
-            var div = L.DomUtil.create('div', 'info legend');
-            var colors = scale.colors(20);
-
-            var gradient = '<i style="background: linear-gradient(to right'
-            for(var i=0; i<colors.length; i++){
-                gradient += ","+ colors[colors.length-1-i] + " " + (i*100/(colors.length-1)) +"%";
-            }
-            gradient += ');"></i><br>';
-
-            div.innerHTML += gradient;
-            div.innerHTML += startDomain
-            for(var i=0; i<44; i++){
-                div.innerHTML += "&nbsp;"
-            }
-            div.innerHTML += endDomain
-
-            return div;
-        };
-        legend.addTo(map);
-    }
-    addPrecipitation(geojson) {
-        var startDomain = 0;
-        var endDomain = 150;
-        var scale = chroma.scale('YlGnBu').domain([startDomain, endDomain]);
-        this.addGeoJSON(geojson, {
-            style: function (feature) {
-                var s = {};
-                s.fillColor = scale(feature.properties.value).hex();
-                s.fillOpacity = 0.65;
-                s.stroke = false;
-                s.fillRule = 'nonzero';
-                return s;
-            }
-        });
-        
-        var map = this.map;
-        var legend = L.control({position: 'bottomright'});
-        legend.onAdd = function (map) {
-            var div = L.DomUtil.create('div', 'info legend');
-            var colors = scale.colors(20);
-
-            var gradient = '<i style="background: linear-gradient(to right'
-            for(var i=0; i<colors.length; i++){
-                gradient += ","+ colors[i] + " " + (i*100/(colors.length-1)) +"%";
-            }
-            gradient += ');"></i><br>';
-
-            div.innerHTML += gradient;
-            div.innerHTML += startDomain
-            for(var i=0; i<43; i++){
-                div.innerHTML += "&nbsp;"
-            }
-            div.innerHTML += endDomain
-
-            return div;
-        };
-        legend.addTo(map);
-    }
-    addTemperatureStation(stationArray) {
-        var icn = new L.Icon.Default;
-        icn.options.iconSize = [10,20];
-        icn.options.iconAnchor = [0,0];
-        icn.options.shadowSize = [0,0];
-        icn.options.popupAnchor = [5,0];
-        for(let i=0; i < stationArray.length; i++) {
-            let stationData = stationArray[i];
-            var map = this.map
-            
-            let markerOptions = {
-                title: stationData.code,
-                icon: icn
-            }
-            let marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
-                .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>Temperature: '+stationData.value+' °C');
-            this.marker.push(marker);
-        }
-    }
-    addPrecipitationStation(stationArray) {
-        var icn = new L.Icon.Default;
-        icn.options.iconSize = [10,20];
-        icn.options.iconAnchor = [0,0];
-        icn.options.shadowSize = [0,0];
-        icn.options.popupAnchor = [5,0];
-        for(let i=0; i < stationArray.length; i++) {
-            let stationData = stationArray[i];
-            var map = this.map
-            let markerOptions = {
-                title: stationData.code,
-                icon: icn
-            }
-            let marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
-                .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>Rain: '+((stationData.value==1)?'Fall':'Not fall'));
-            this.marker.push(marker);
-        }
-    }
+    let layout = {
+      title: gData.title,
+      xaxis: {
+        autorange: true,
+        type: 'string'
+      },
+      yaxis: {
+        autorange: true,
+        range: [0, 30],
+        type: 'linear'
+      }
+    };
+    Plotly.newPlot('graphEachMonth', data, layout);
   }
+  plotGraphEachMonth(gEachMonth);
 </script>
 
 <script>
+
   var map = new Basemap('map', {
-      zoom: 4.3,
-      minZoom: 4.3,
+    zoom: 4.3,
+    minZoom: 4.3,
     maxZoom: 20,
-      maxBounds: [[-14.8144, 89.4891],[26.9569, 146.5108]],
-      preferCanvas: true
+    maxBounds: [[-14.8144, 89.4891],[26.9569, 146.5108]],
+    preferCanvas: true
   });
 
-  var attr = <%- JSON.stringify(selector[0].geoVariables[0].name) %>
+  var attribute = <%- JSON.stringify(selector[0].geoVariables[0].name) %>
   var data = <%- JSON.stringify(geojson) %>
-  var sData = <%- JSON.stringify(stationData) %>
-  if(attr == 'tas'){
-    map.addTemperature(data);
-    map.addTemperatureStation(sData);
-  } else if(attr == 'pr'){
-    map.addPrecipitation(data);
-    map.addPrecipitationStation(sData);
+  var stationAttribute = <%- JSON.stringify(selector[0].stationVariables[0]) %>
+  var stationData = <%- JSON.stringify(stationData) %>
+  var climateOptions = {
+    'tas': {
+      color: ['MediumBlue', 'LightYellow', 'Red'],
+      //color: ['PaleGoldenRod', 'red'],
+      range: [8, 38],
+      discrete: 10,
+      variable_unit: '°C'
+    },
+    'pr': {
+      color: 'YlGnBu',
+      range: [2000, 6000],
+      discrete: 10,
+      variable_unit: 'mm'
+    }
   }
+  var stationOptions = {
+    'meantemp': {
+      name: 'Mean Temperature',
+      unit: '°C'
+    },
+    'rain': {
+      name: 'Rain',
+      unit: ''
+    }
+  }
+
+  function plotClimate(cAttr, cData, climateOpt) {
+    var cOptions = climateOpt[cAttr];
+    map.addClimateData(cData, cOptions.color, cOptions.range, cOptions.discrete, cOptions.variable_unit);
+  }
+  function plotStation(sAttr, sData, stationOpt) {
+    var sOptions = stationOpt[sAttr];
+    map.addStation(sData, sOptions.name, sOptions.unit);
+  }
+  plotClimate(attribute, data, climateOptions);
+  plotStation(stationAttribute, stationData, stationOptions);
 
 </script>
 
