@@ -355,6 +355,7 @@
         endDate: endDate
       },
       success: function(d) {
+        console.log('Success at '+new Date());
         map.removeClimateData();
         plotClimate(d.attribute, d.data, climateOptions);
       }
