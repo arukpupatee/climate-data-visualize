@@ -73,7 +73,9 @@ router.get('/', async (req, res, next) => {
   var climateData = await ClimateData(dataset, geoAttr, freq).getMeanValue(dateStart, dateEnd);
   var stationData = await StationData(dataset, sAttr, freq).getMeanValue(dateStart, dateEnd);
   
-  obj.geojson = grid2geojson.toGeoJSON(climateInfo[0].lat, climateInfo[0].lon, climateData.value);
+  obj.geoData = climateData.value;
+  obj.geoLat = climateInfo[0].lat;
+  obj.geoLon = climateInfo[0].lon;
   obj.stationData = stationData;
 
   obj.graphData = await ClimateData(dataset, geoAttr, freq).getAreaMeanValueList(dateStart, dateEnd);

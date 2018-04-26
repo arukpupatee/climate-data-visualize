@@ -23,7 +23,10 @@ router.get('/geodata', async (req, res, next) => {
     var climateInfo = await ClimateDataInfo.findOne({name:q.dataset});
     var climateData = await ClimateData(q.dataset, q.geoVariable, q.frequency).getMeanValue(q.startDate, q.endDate);
     obj.attribute = q.geoVariable;
-    obj.data = grid2geojson.toGeoJSON(climateInfo.lat, climateInfo.lon, climateData.value);
+    //obj.data = grid2geojson.toGeoJSON(climateInfo.lat, climateInfo.lon, climateData.value);
+    obj.geoData = climateData.value;
+    //obj.geoLat = climateInfo[0].lat;
+    //obj.geoLon = climateInfo[0].lon;
     res.json(obj);
 });
 
