@@ -13,6 +13,7 @@ var ClimateDataInfo = require('./models/ClimateDataInfo');
 var StationDataInfo = require('./models/StationDataInfo');
 var ClimateData = require('./models/ClimateData');
 var StationData = require('./models/StationData');
+var ClimateDataMeanEachMonthInYearly = require('./models/ClimateDataMeanEachMonthInYearly');
 /*
 var ClimateData_MPI_RF_tas_Daily = ClimateData('MPI_RF','tas','Daily');
 var ClimateData_MPI_RF_pr_Daily = ClimateData('MPI_RF','pr','Daily');
@@ -32,6 +33,10 @@ var TemperatureDataYearly = ClimateData('MPI_RF','tas','Yearly');
 var PrecipitationDataYearly = ClimateData('MPI_RF','pr','Yearly');
 var MeantempStationYearly = StationData('MPI_RF','meantemp','Yearly');
 var RainStationYearly = StationData('MPI_RF','rain','Yearly');
+*/
+/*
+var TemperatureDataMeanEachMonthInYearly = ClimateDataMeanEachMonthInYearly('MPI_RF', 'tas');
+var PrecipitationDataMeanEachMonthInYearly = ClimateDataMeanEachMonthInYearly('MPI_RF', 'pr');
 */
 
 var home = require('./routes/home');

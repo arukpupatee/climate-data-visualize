@@ -47,6 +47,10 @@ var climateDataInfoSchema = new Schema({
         type: [[Number]],
         required: true
     },
+    mask: {
+        type: [[Number]],
+        required: true
+    },
     variables: {
         type: {variablesSchema}
     }

@@ -1,4 +1,4 @@
-const toGeoJSON = (lats, lons, data, padding=true) => {
+const toGeoJSON = (lats, lons, mask, data, padding=true) => {
     var arr = [];
 
     if(padding){
@@ -18,18 +18,28 @@ const toGeoJSON = (lats, lons, data, padding=true) => {
                     lon2 = lons[lonIdx] + (lons[lonIdx] - lons[lonIdx-1]); 
                 }
 
-                let feature = { "type": "Feature" };
-                feature.properties = { value: data[latIdx][lonIdx] };
-                feature.geometry = {
-                    "type": "Polygon",
-                    "coordinates": [[
-                        [lon1, lat1],
-                        [lon2, lat1],
-                        [lon2, lat2],
-                        [lon1, lat2]
-                    ]]
-                };
-                arr.push(feature);
+                let latAdj = lat2-lat1;
+                let lonAdj = lon2-lon1;
+
+                lat1 = lat1 - latAdj;
+                lat2 = lat2 - latAdj;
+                lon1 = lon1 - lonAdj;
+                lon2 = lon2 - lonAdj;
+
+                if(mask[latIdx][lonIdx] == 2){
+                    let feature = { "type": "Feature" };
+                    feature.properties = { value: data[latIdx][lonIdx] };
+                    feature.geometry = {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [lon1, lat1],
+                            [lon2, lat1],
+                            [lon2, lat2],
+                            [lon1, lat2]
+                        ]]
+                    };
+                    arr.push(feature);
+                }
             }
         }
     } else {
@@ -39,6 +49,14 @@ const toGeoJSON = (lats, lons, data, padding=true) => {
                 let lon1 = lons[lonIdx];
                 let lat2 = lats[latIdx+1];
                 let lon2 = lons[lonIdx+1];
+
+                let latAdj = lat2-lat1;
+                let lonAdj = lon2-lon1;
+
+                lat1 = lat1 - latAdj;
+                lat2 = lat2 - latAdj;
+                lon1 = lon1 - lonAdj;
+                lon2 = lon2 - lonAdj;
                 
                 let feature = { "type": "Feature" };
                 feature.properties = { value: data[latIdx][lonIdx] };

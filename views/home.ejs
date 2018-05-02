@@ -143,6 +143,38 @@
       this.marker = [];
       this.legend = [];
       this.map.addLayer(this.layer.basemap);
+      this.region = {
+        isSelecting: false,
+        isPlotted: false,
+        lat1: null,
+        lon1: null,
+        lat2: null,
+        lon2: null,
+        bounds: [[null, null],[null, null]],
+        box: null
+      }
+
+      //var region = this.region
+      //let map = this.map
+      var basemap = this;
+      this.map.on('click', function(e) {
+        let region = basemap.region;
+        let map = basemap.map;
+        if(!region.isSelecting) {
+          region.bounds[0][0] = e.latlng.lat;
+          region.bounds[0][1] = e.latlng.lng;
+          region.isSelecting = true;
+          if(region.isPlotted) {
+            map.removeLayer(region.box);
+          }
+        } else {
+          region.bounds[1][0] = e.latlng.lat;
+          region.bounds[1][1] = e.latlng.lng;
+          region.isSelecting = false;
+          region.isPlotted = true;
+          region.box = L.rectangle(region.bounds, {color: "#000000", fillOpacity: 0, weight: 2}).addTo(map);
+        }
+      });
     }
     addGeoJSON(geojson, options) {
       let geojsonLayer = L.geoJSON(geojson, options);
@@ -216,13 +248,13 @@
           icon: icn
         }
         let marker;
-        if(variable != 'Rain'){
+        //if(variable != 'Rain'){
           marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
             .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>'+variable+': '+stationData.value+' '+variable_unit);  
-        } else {
-          marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
-            .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>'+variable+': '+((stationData.value==1)?'Fall':'Not fall'));  
-        }
+        //} else {
+        //  marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
+        //    .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>'+variable+': '+((stationData.value==1)?'Fall':'Not fall'));  
+        //}
         
         this.marker.push(marker);
       }
@@ -338,15 +370,15 @@
       if(frequency == 'Yearly') {
         //startDate = date.split(' to ')[0] + '-01-01T23:59:59.000Z';
         //endDate = date.split(' to ')[1] + '-12-31T23:59:59.000Z'
-        startDate = moment(new Date(date.split(' to ')[0])).startOf('year').format('YYYY-MM-DD')+'T00:00:00.000Z';
-        endDate = moment(new Date(date.split(' to ')[1])).endOf('year').format('YYYY-MM-DD')+'T23:59:59.000Z';
+        startDate = moment(new Date(date.split(' to ')[0])).startOf('year').format('YYYY-MM-DD');
+        endDate = moment(new Date(date.split(' to ')[1])).endOf('year').format('YYYY-MM-DD');
       } else if(frequency == 'Monthly') {
         //startDate = date.split(' to ')[0] + '-01T23:59:59.000Z';
-        startDate = moment(new Date(date.split(' to ')[0])).startOf('month').format('YYYY-MM-DD')+'T00:00:00.000Z';
-        endDate = moment(new Date(date.split(' to ')[1])).endOf('month').format('YYYY-MM-DD')+'T23:59:59.000Z';
+        startDate = moment(new Date(date.split(' to ')[0])).startOf('month').format('YYYY-MM-DD');
+        endDate = moment(new Date(date.split(' to ')[1])).endOf('month').format('YYYY-MM-DD');
       } else {
-        startDate = moment(new Date(date.split(' to ')[0])).format('YYYY-MM-DD')+'T00:00:00.000Z';
-        endDate = moment(new Date(date.split(' to ')[1])).format('YYYY-MM-DD')+'T23:59:59.000Z';
+        startDate = moment(new Date(date.split(' to ')[0])).format('YYYY-MM-DD');
+        endDate = moment(new Date(date.split(' to ')[1])).format('YYYY-MM-DD');
       }
     } else {
       if(date.split(' to ')[0] != '') {
@@ -379,7 +411,7 @@
       success: function(d) {
         map.removeClimateData();
         data = d.geoData
-        geoJSON = toGeoJSON(lat, lon, data);
+        geoJSON = toGeoJSON(lat, lon, mask, data);
         plotClimate(d.attribute, geoJSON, climateOptions);
       }
     });
@@ -443,14 +475,13 @@
     let data = [trace];
 
     let layout = {
-      title: gData.title,
+      title: 'Average of '+ gData.geoAttrLongName + ' (' + gData.unit + ')',
       xaxis: {
         autorange: true,
-        type: 'category'
+        type: 'date'
       },
       yaxis: {
         autorange: true,
-        range: [0, 30],
         type: 'linear'
       }
     };
@@ -470,15 +501,14 @@
     let data = [trace];
 
     let layout = {
-      title: gData.title,
+      title: 'Average of '+ gData.geoAttrLongName +'<br>in Each Month' + ' (' + gData.unit + ')',
       xaxis: {
         autorange: true,
         type: 'string'
       },
       yaxis: {
         autorange: true,
-        range: [0, 30],
-        type: 'linear'
+        type: 'linear',
       }
     };
     Plotly.newPlot('graphEachMonth', data, layout);
@@ -500,7 +530,8 @@
   var data = <%- JSON.stringify(geoData) %>
   var lat = <%- JSON.stringify(geoLat) %>
   var lon = <%- JSON.stringify(geoLon) %>
-  var geoJSON = toGeoJSON(lat, lon, data);
+  var mask = <%- JSON.stringify(landMask) %>
+  var geoJSON = toGeoJSON(lat, lon, mask, data);
   var stationAttribute = <%- JSON.stringify(selector[0].stationVariables[0]) %>
   var stationData = <%- JSON.stringify(stationData) %>
   var climateOptions = {
@@ -524,8 +555,8 @@
       unit: '°C'
     },
     'rain': {
-      name: 'Rain',
-      unit: ''
+      name: 'Rainfall',
+      unit: 'days'
     }
   }
 

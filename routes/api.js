@@ -21,7 +21,7 @@ router.get('/geodata', async (req, res, next) => {
     var q = req.query;
     var obj = {};
     var climateInfo = await ClimateDataInfo.findOne({name:q.dataset});
-    var climateData = await ClimateData(q.dataset, q.geoVariable, q.frequency).getMeanValue(q.startDate, q.endDate);
+    var climateData = await ClimateData(q.dataset, q.geoVariable, q.frequency).getMeanValue(new Date(q.startDate), new Date(q.endDate));
     obj.attribute = q.geoVariable;
     //obj.data = grid2geojson.toGeoJSON(climateInfo.lat, climateInfo.lon, climateData.value);
     obj.geoData = climateData.value;
@@ -34,7 +34,7 @@ router.get('/station', async (req, res, next) => {
     var q = req.query;
     var obj = {};
     var stationInfo = await StationInfo.findOne({name:q.dataset});
-    var stationData = await StationData(q.dataset, q.stationVariable, q.frequency).getMeanValue(q.startDate, q.endDate);
+    var stationData = await StationData(q.dataset, q.stationVariable, q.frequency).getMeanValue(new Date(q.startDate), new Date(q.endDate));
     obj.attribute = q.stationVariable;
     obj.data = stationData;
     res.json(obj);
@@ -44,9 +44,18 @@ router.get('/graphData', async (req, res, next) => {
     var q = req.query;
     var obj = {};
     var climateInfo = await ClimateDataInfo.findOne({name:q.dataset});
-    obj.data = await ClimateData(q.dataset, q.geoVariable, q.frequency).getAreaMeanValueList(q.startDate, q.endDate);
+    obj.data = await ClimateData(q.dataset, q.geoVariable, q.frequency).getAreaMeanValueList(new Date(q.startDate), new Date(q.endDate));
     var geoAttrLongName = climateInfo.variables[q.geoVariable].long_name;
-    obj.data.title = 'Average of '+ geoAttrLongName;
+    var geoAttrUnit = climateInfo.variables[q.geoVariable].units;
+    if(q.geoVariable == 'pr') {
+        if(q.frequency == 'Monthly') {
+            geoAttrUnit = 'mm/month';
+        } else if(q.frequency == 'Yearly') {
+            geoAttrUnit = 'mm/year';
+        }
+    }
+    obj.data.geoAttrLongName = geoAttrLongName;
+    obj.data.unit = geoAttrUnit;
     res.json(obj);
 });
 
@@ -54,9 +63,18 @@ router.get('/graphEachMonth', async (req, res, next) => {
     var q = req.query;
     var obj = {};
     var climateInfo = await ClimateDataInfo.findOne({name:q.dataset});
-    obj.data = await ClimateDataMeanEachMonthInYearly(q.dataset, q.geoVariable).getValueList(q.startDate, q.endDate);
+    obj.data = await ClimateDataMeanEachMonthInYearly(q.dataset, q.geoVariable).getValueList(new Date(q.startDate), new Date(q.endDate));
     var geoAttrLongName = climateInfo.variables[q.geoVariable].long_name;
-    obj.data.title = 'Average of '+ geoAttrLongName+' in Each Month';
+    var geoAttrUnit = climateInfo.variables[q.geoVariable].units;
+    if(q.geoVariable == 'pr') {
+        if(q.frequency == 'Monthly') {
+            geoAttrUnit = 'mm/month';
+        } else if(q.frequency == 'Yearly') {
+            geoAttrUnit = 'mm/year';
+        }
+    }
+    obj.data.geoAttrLongName = geoAttrLongName;
+    obj.data.unit = geoAttrUnit;
     res.json(obj);
 });
 

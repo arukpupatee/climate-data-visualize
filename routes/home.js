@@ -13,7 +13,14 @@ var ClimateDataMeanEachMonthInYearly = require('../models/ClimateDataMeanEachMon
 router.get('/', async (req, res, next) => {
   //var info = await ClimateDataInfo.findOne({name:'MPI_RF'});
 
-  var climateInfo = await ClimateDataInfo.find({}, {name:1, date:1, variables:1, lat:1, lon:1});
+  var climateInfo = await ClimateDataInfo.find({}, {
+    name:1, 
+    date:1, 
+    variables:1, 
+    lat:1, 
+    lon:1, 
+    mask:1
+  });
   var stationInfo = await StationInfo.find({});
 
   var selector = [];
@@ -40,10 +47,10 @@ router.get('/', async (req, res, next) => {
     selector.push({
       dataset: climateInfo[i].name,
       date: {
-        min: moment(new Date(Math.min.apply(null, climateInfo[i].date))).subtract(1, "days").format('YYYY-MM-DD'),
-        max: moment(new Date(Math.max.apply(null, climateInfo[i].date))).subtract(1, "days").format('YYYY-MM-DD')
-        //min: moment(Math.min.apply(null, climateInfo[i].date)).format('YYYY-MM-DD'),
-        //max: moment(Math.max.apply(null, climateInfo[i].date)).format('YYYY-MM-DD')
+        //min: moment(new Date(Math.min.apply(null, climateInfo[i].date))).subtract(1, "days").format('YYYY-MM-DD'),
+        //max: moment(new Date(Math.max.apply(null, climateInfo[i].date))).subtract(1, "days").format('YYYY-MM-DD')
+        min: moment(Math.min.apply(null, climateInfo[i].date)).format('YYYY-MM-DD'),
+        max: moment(Math.max.apply(null, climateInfo[i].date)).format('YYYY-MM-DD')
       },
       geoVariables: [geoVariables[1], geoVariables[0]], //geoVariables, //swap fix because now only have tas and pr
       stationVariables: stationVariables,
@@ -65,9 +72,9 @@ router.get('/', async (req, res, next) => {
   var dStart = defaultSelect.date.min;
   var dEnd = defaultSelect.date.max;
   
-  var dateStart = new Date(dStart+'T23:59:59.000Z');
+  var dateStart = new Date(dStart);
   //dateStart.setSeconds(dateStart.getSeconds() - 1);
-  var dateEnd = new Date(dEnd+'T23:59:59.000Z');
+  var dateEnd = new Date(dEnd);
   //dateEnd.setSeconds(dateEnd.getSeconds() - 1);
 
   var climateData = await ClimateData(dataset, geoAttr, freq).getMeanValue(dateStart, dateEnd);
@@ -76,14 +83,26 @@ router.get('/', async (req, res, next) => {
   obj.geoData = climateData.value;
   obj.geoLat = climateInfo[0].lat;
   obj.geoLon = climateInfo[0].lon;
+  obj.landMask = climateInfo[0].mask;
   obj.stationData = stationData;
 
   obj.graphData = await ClimateData(dataset, geoAttr, freq).getAreaMeanValueList(dateStart, dateEnd);
-  obj.graphData.title = 'Average of '+ geoAttrLongName;
+
+  var geoAttrUnit = climateInfo[0].variables[geoAttr].units;
+  if(geoAttr == 'pr') {
+    if(freq == 'Monthly') {
+      geoAttrUnit = 'mm/month';
+    } else if(freq == 'Yearly') {
+      geoAttrUnit = 'mm/year';
+    }
+  }
+  obj.graphData.geoAttrLongName = geoAttrLongName;
+  obj.graphData.unit = geoAttrUnit;
 
   if(freq == 'Yearly'){
     obj.graphEachMonthData = await ClimateDataMeanEachMonthInYearly(dataset, geoAttr).getValueList(dateStart, dateEnd);
-    obj.graphEachMonthData.title = 'Average of '+ geoAttrLongName+' in Each Month';
+    obj.graphEachMonthData.geoAttrLongName = geoAttrLongName;
+    obj.graphEachMonthData.unit = geoAttrUnit;
   }
 
   res.render('home', obj);

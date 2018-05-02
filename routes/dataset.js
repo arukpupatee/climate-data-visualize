@@ -51,8 +51,9 @@ router.get('/rcm', async (req, res, next) => {
     var PrecipitationData = ClimateData('MPI_RF', 'pr', 'Daily');
 
     var insert_MPI_RF = async ()=>{
-        var start_date = moment('1970-01-01');
-        var end_date = moment('2005-01-31');
+        //var start_date = moment('1970-01-01');
+        var start_date = moment('2005-02-01');
+        var end_date = moment('2006-01-01');
         for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'months')){
             console.log(m.format('YYYY-MM-DD'));
             let dir = 'D:/Lesson/Project/Dataset/Climate/upload_to_web/data/MPI_RF/';
@@ -81,7 +82,7 @@ router.get('/rcm', async (req, res, next) => {
             obj2 = null;
         }
     }
-    await insert_MPI_RF();
+    //await insert_MPI_RF();
 
     // upload mpi_rcp45
 
@@ -127,7 +128,7 @@ router.get('/rcm', async (req, res, next) => {
             obj2 = null;
         }
     }
-    await insert_MPI_RCP();
+    //await insert_MPI_RCP();
     
 });
 
@@ -158,7 +159,7 @@ router.get('/station', async (req, res, next) => {
             data = null;
         }
     };
-    await insert_meantemp(meantemp_info.code);
+    //await insert_meantemp(meantemp_info.code);
 
     console.log('rain');
     var RainStationData = StationData('MPI_RF', 'rain', 'Daily');
@@ -172,7 +173,7 @@ router.get('/station', async (req, res, next) => {
             data = null;
         }
     };
-    await insert_rain(rain_info.code);
+    //await insert_rain(rain_info.code);
     
 });
 
@@ -190,17 +191,18 @@ router.get('/monthly', async (req, res, next) => {
     var RainStationDaily = StationData('MPI_RF','rain','Daily');
     var RainStationMonthly = StationData('MPI_RF','rain','Monthly');
     var start_date = moment('1970-01-01');
-    var end_date = moment('2005-02-28');
+    var end_date = moment('2006-01-01');
     //var end_date = moment('1970-06-30');
     for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'months')){
-        var startDate = new Date(m.format('YYYY-MM-')+'01'+'T00:00:00+07:00');
+        var startDate = new Date(m.format('YYYY-MM-')+'01');
         var endDate = m.endOf('month').toDate();
-        /*
+        
         console.log("--------------------------");
         console.log(startDate+' to '+endDate);
-
+        /*
         var meanTemperatureValue = await TemperatureDataDaily.getMeanValue(startDate, endDate);
-        //console.log(meanTemperatureValue.startDate+' to '+meanTemperatureValue.endDate);
+        console.log(meanTemperatureValue.startDate+' to '+meanTemperatureValue.endDate);
+        
         await TemperatureDataMonthly.create(meanTemperatureValue);
         
         var sumPrecipitationValue = await PrecipitationDataDaily.getSumValue(startDate, endDate);
@@ -231,7 +233,7 @@ router.get('/mean_each_month', async (req, res, next) => {
     //var end_date = moment('1974-01-01');
 
     for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'years')){
-        var startDate = new Date(m.format('YYYY')+'-01-01'+'T00:00:00+06:59');
+        var startDate = new Date(m.format('YYYY')+'-01-01');
         var endDate = m.endOf('year').toDate();
         console.log(startDate+' to '+endDate);
 
@@ -264,7 +266,7 @@ router.get('/mean_each_month', async (req, res, next) => {
             endDate: data[data.length-1].endDate,
             value: meanList
         };
-        await TemperatureDataMeanEachMonthInYearly.create(d);
+        //await TemperatureDataMeanEachMonthInYearly.create(d);
 
         data = await PrecipitationDataMonthly.findByDateRange(startDate, endDate);
         sumList = [0,0,0,0,0,0,0,0,0,0,0,0];
@@ -295,7 +297,7 @@ router.get('/mean_each_month', async (req, res, next) => {
             endDate: data[data.length-1].endDate,
             value: meanList
         };
-        await PrecipitationDataMeanEachMonthInYearly.create(d);
+        //await PrecipitationDataMeanEachMonthInYearly.create(d);
         
         console.log('================================================');
     }
@@ -317,13 +319,13 @@ router.get('/yearly', async (req, res, next) => {
     var start_date = moment('1970-01-01');
     var end_date = moment('2006-01-01');
     for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'years')){
-        var startDate = new Date(m.format('YYYY')+'-01-01'+'T00:00:00+06:59');
+        var startDate = new Date(m.format('YYYY')+'-01-01');
         var endDate = m.endOf('year').toDate();
         //console.log(startDate+' to '+endDate);
-        
+        /*
         var meanTemperatureValue = await TemperatureDataMonthly.getMeanValue(startDate, endDate);
         console.log(meanTemperatureValue.startDate+' to '+meanTemperatureValue.endDate);
-        /*
+        
         await TemperatureDataYearly.create(meanTemperatureValue);
         
         var sumPrecipitationValue = await PrecipitationDataMonthly.getSumValue(startDate, endDate);
