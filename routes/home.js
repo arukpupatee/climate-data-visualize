@@ -69,16 +69,11 @@ router.get('/', async (req, res, next) => {
     }
   }
 
-  
-
   var obj = {
     selector: selector
   };
-
   
-  
-
-  var defaultSelect = selector[defaultIndex];
+  var defaultSelect = selector[0];
 
   var dataset = defaultSelect.dataset;
   var geoAttr = defaultSelect.geoVariables[0].name;
