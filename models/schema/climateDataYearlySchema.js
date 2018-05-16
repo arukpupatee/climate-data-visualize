@@ -45,8 +45,6 @@ climateDataSchema.statics.findByDateRange = function (dateStart, dateEnd){
 climateDataSchema.statics.getMeanValue = async function (dateStart, dateEnd){
     var data = await this.findByDateRange(dateStart, dateEnd);
 
-    console.log(data);
-
     var sumValue = data[0].value;
     for(let d=1; d < data.length; d++) {
         let value = data[d].value;
