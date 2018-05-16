@@ -59,13 +59,17 @@ router.get('/', async (req, res, next) => {
   }
 
   /* default selector is MPI_RF */
+  var defaultIndex;
   for(let i=0; i < selector.length; i++){
     if(selector[i].dataset == 'MPI_RF'){
       var temp = selector[0];
       selector[0] = selector[i];
       selector[i] = temp;
+      defaultIndex = i;
     }
   }
+
+  
 
   var obj = {
     selector: selector
@@ -74,7 +78,7 @@ router.get('/', async (req, res, next) => {
   
   
 
-  var defaultSelect = selector[0];
+  var defaultSelect = selector[defaultIndex];
 
   var dataset = defaultSelect.dataset;
   var geoAttr = defaultSelect.geoVariables[0].name;
@@ -93,16 +97,16 @@ router.get('/', async (req, res, next) => {
   var stationData = await StationData(dataset, sAttr, freq).getMeanValue(dateStart, dateEnd);
   
   obj.geoData = climateData.value;
-  obj.geoLat = climateInfo[0].lat;
-  obj.geoLon = climateInfo[0].lon;
-  obj.landMask = climateInfo[0].mask;
+  obj.geoLat = climateInfo[defaultIndex].lat;
+  obj.geoLon = climateInfo[defaultIndex].lon;
+  obj.landMask = climateInfo[defaultIndex].mask;
   obj.stationData = stationData;
 
   obj.graphData = {};
   obj.graphData.geoData = await ClimateData(dataset, geoAttr, freq).getAreaMeanValueList(dateStart, dateEnd);
   obj.graphData.stationData = await StationData(dataset, sAttr, freq).getAllStationMeanValueList(dateStart, dateEnd);
 
-  var geoAttrUnit = climateInfo[0].variables[geoAttr].units;
+  var geoAttrUnit = climateInfo[defaultIndex].variables[geoAttr].units;
   if(geoAttr == 'pr') {
     if(freq == 'Monthly') {
       geoAttrUnit = 'mm/month';
