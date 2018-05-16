@@ -44,7 +44,13 @@ router.get('/graphData', async (req, res, next) => {
     var q = req.query;
     var obj = {};
     var climateInfo = await ClimateDataInfo.findOne({name:q.dataset});
-    obj.data = await ClimateData(q.dataset, q.geoVariable, q.frequency).getAreaMeanValueList(new Date(q.startDate), new Date(q.endDate));
+    obj.data = {};
+    //if(q.lat1 == 'All') {
+        obj.data.geoData = await ClimateData(q.dataset, q.geoVariable, q.frequency).getAreaMeanValueList(new Date(q.startDate), new Date(q.endDate));
+    //} else {
+        //obj.data = await ClimateData(q.dataset, q.geoVariable, q.frequency).getSpecificAreaMeanValueList(new Date(q.startDate), new Date(q.endDate), climateInfo, q.lat1, q.lon1, q.lat2, q.lon2);
+    //}
+    obj.data.stationData = await StationData(q.dataset, q.stationVariable, q.frequency).getAllStationMeanValueList(q.startDate, q.endDate);
     var geoAttrLongName = climateInfo.variables[q.geoVariable].long_name;
     var geoAttrUnit = climateInfo.variables[q.geoVariable].units;
     if(q.geoVariable == 'pr') {
@@ -72,6 +78,28 @@ router.get('/graphEachMonth', async (req, res, next) => {
         } else if(q.frequency == 'Yearly') {
             geoAttrUnit = 'mm/year';
         }
+    }
+    obj.data.geoAttrLongName = geoAttrLongName;
+    obj.data.unit = geoAttrUnit;
+    res.json(obj);
+});
+
+router.get('/graphLongTerm', async (req, res, next) => {
+    var q = req.query;
+    var obj = {};
+    var climateInfo = await ClimateDataInfo.find({});
+    obj.data = {};
+    var mpi_rf_date_min = moment(Math.min.apply(null, climateInfo[0].date)).format('YYYY-MM-DD');
+    var mpi_rf_date_max = moment(Math.max.apply(null, climateInfo[0].date)).format('YYYY-MM-DD');
+    var mpi_rcp45_date_min = moment(Math.min.apply(null, climateInfo[1].date)).format('YYYY-MM-DD');
+    var mpi_rcp45_date_max = moment(Math.max.apply(null, climateInfo[1].date)).format('YYYY-MM-DD');
+    obj.data.mpi_rf = await ClimateData(climateInfo[0].name, q.geoVariable, 'Yearly').getAreaMeanValueList(mpi_rf_date_min, mpi_rf_date_max);
+    obj.data.mpi_rcp45 = await ClimateData(climateInfo[1].name, q.geoVariable, 'Yearly').getAreaMeanValueList(mpi_rcp45_date_min, mpi_rcp45_date_max);
+    
+    var geoAttrLongName = climateInfo[0].variables[q.geoVariable].long_name;
+    var geoAttrUnit = climateInfo[0].variables[q.geoVariable].units;
+    if(q.geoVariable == 'pr') {
+        geoAttrUnit = 'mm/year';
     }
     obj.data.geoAttrLongName = geoAttrLongName;
     obj.data.unit = geoAttrUnit;

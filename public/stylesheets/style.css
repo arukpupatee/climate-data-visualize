@@ -38,3 +38,7 @@ a {
 .graph {
   height: 300px;
 }
+
+.graph-lg {
+  height: 600px;
+}

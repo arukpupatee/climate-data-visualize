@@ -86,7 +86,9 @@ router.get('/', async (req, res, next) => {
   obj.landMask = climateInfo[0].mask;
   obj.stationData = stationData;
 
-  obj.graphData = await ClimateData(dataset, geoAttr, freq).getAreaMeanValueList(dateStart, dateEnd);
+  obj.graphData = {};
+  obj.graphData.geoData = await ClimateData(dataset, geoAttr, freq).getAreaMeanValueList(dateStart, dateEnd);
+  obj.graphData.stationData = await StationData(dataset, sAttr, freq).getAllStationMeanValueList(dateStart, dateEnd);
 
   var geoAttrUnit = climateInfo[0].variables[geoAttr].units;
   if(geoAttr == 'pr') {
@@ -103,6 +105,16 @@ router.get('/', async (req, res, next) => {
     obj.graphEachMonthData = await ClimateDataMeanEachMonthInYearly(dataset, geoAttr).getValueList(dateStart, dateEnd);
     obj.graphEachMonthData.geoAttrLongName = geoAttrLongName;
     obj.graphEachMonthData.unit = geoAttrUnit;
+  }
+
+  obj.graphLongTerm = {};
+  obj.graphLongTerm.mpi_rf = await ClimateData('MPI_RF', geoAttr, 'Yearly').getAreaMeanValueList(selector[0].date.min, selector[0].date.max);
+  obj.graphLongTerm.mpi_rcp45 = await ClimateData('MPI_RCP45', geoAttr, 'Yearly').getAreaMeanValueList(selector[1].date.min, selector[1].date.max);
+  obj.graphLongTerm.geoAttrLongName = geoAttrLongName;
+  if(geoAttr == 'pr') {
+    obj.graphLongTerm.unit = 'mm/year';
+  } else {
+    obj.graphLongTerm.unit = geoAttrUnit;
   }
 
   res.render('home', obj);

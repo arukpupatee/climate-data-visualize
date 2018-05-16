@@ -100,14 +100,48 @@
           </div>
         </div>
 
-        <div class="col-md-3">
-          <button type="button" class="btn btn-primary" onclick='visualize()'>Visualize</button>
+        <div class="col-md-5">
+          <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#advanceOptionsPanel" aria-expanded="false" aria-controls="advanceOptionsPanel">Advance Options</button>
+          <button type="button" class="btn btn-success" onclick='visualize()'>Visualize</button>
         </div>
 
       </div>
 
       <div class='collapse' id='datepicker-collapse'>
         <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+      </div>
+
+      <div class="collapse" id="advanceOptionsPanel">
+        <div class="row">
+
+          <div class="col-md-6">
+            <div class="row">
+              <label for="lat1" class="col-md-1 col-form-label">Lat1</label>
+              <div class="col-md-2">
+                <input type="text" id='lat1' name='lat1' class="form-control form-control-sm" value='All'/>
+              </div>
+              <label for="lon1" class="col-md-1 col-form-label">Lon1</label>
+              <div class="col-md-2">
+                <input type="text" id='lon1' name='lon1' class="form-control form-control-sm" value='All'/>
+              </div>
+
+              <label for="lat2" class="col-md-1 col-form-label">Lat2</label>
+              <div class="col-md-2">
+                <input type="text" id='lat2' name='lat2' class="form-control form-control-sm" value='All'/>
+              </div>
+              <label for="lon2" class="col-md-1 col-form-label">Lon2</label>
+              <div class="col-md-2">
+                <input type="text" id='lon2' name='lo2' class="form-control form-control-sm" value='All'/>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-2">
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="button" aria-pressed="false" onclick='cropRegion()'>Crop</button>
+            <button type="button" class="btn btn-warning btn-sm" onclick='resetRegion()'>Reset</button>
+          </div>
+        
+        </div>
       </div>
 
       <div class="row">
@@ -127,6 +161,17 @@
           </div>
         </div>
       </div>
+
+      <div class="row">
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-8">
+          <div id="graphLongTerm" class="graph-lg"></div>
+        </div>
+      </div>
+
+      <br><br>
+
     </div>
 
 <script>
@@ -143,38 +188,7 @@
       this.marker = [];
       this.legend = [];
       this.map.addLayer(this.layer.basemap);
-      this.region = {
-        isSelecting: false,
-        isPlotted: false,
-        lat1: null,
-        lon1: null,
-        lat2: null,
-        lon2: null,
-        bounds: [[null, null],[null, null]],
-        box: null
-      }
-
-      //var region = this.region
-      //let map = this.map
-      var basemap = this;
-      this.map.on('click', function(e) {
-        let region = basemap.region;
-        let map = basemap.map;
-        if(!region.isSelecting) {
-          region.bounds[0][0] = e.latlng.lat;
-          region.bounds[0][1] = e.latlng.lng;
-          region.isSelecting = true;
-          if(region.isPlotted) {
-            map.removeLayer(region.box);
-          }
-        } else {
-          region.bounds[1][0] = e.latlng.lat;
-          region.bounds[1][1] = e.latlng.lng;
-          region.isSelecting = false;
-          region.isPlotted = true;
-          region.box = L.rectangle(region.bounds, {color: "#000000", fillOpacity: 0, weight: 2}).addTo(map);
-        }
-      });
+      
     }
     addGeoJSON(geojson, options) {
       let geojsonLayer = L.geoJSON(geojson, options);
@@ -365,11 +379,8 @@
     let date = $('#date').val();
     let startDate;
     let endDate;
-    console.log(date.split(' to '));
     if(date.split(' to ').length == 2) {
       if(frequency == 'Yearly') {
-        //startDate = date.split(' to ')[0] + '-01-01T23:59:59.000Z';
-        //endDate = date.split(' to ')[1] + '-12-31T23:59:59.000Z'
         startDate = moment(new Date(date.split(' to ')[0])).startOf('year').format('YYYY-MM-DD');
         endDate = moment(new Date(date.split(' to ')[1])).endOf('year').format('YYYY-MM-DD');
       } else if(frequency == 'Monthly') {
@@ -383,12 +394,9 @@
     } else {
       if(date.split(' to ')[0] != '') {
         if(frequency == 'Yearly') {
-          //startDate = date.split(' to ')[0] + '-01-01T23:59:59.000Z';
-          //endDate = date.split(' to ')[1] + '-12-31T23:59:59.000Z'
           startDate = moment(new Date(date.split(' to ')[0])).startOf('year').format('YYYY-MM-DD')+'T00:00:00.000Z';
           endDate = moment(new Date(date.split(' to ')[0])).endOf('year').format('YYYY-MM-DD')+'T23:59:59.000Z';
         } else if(frequency == 'Monthly') {
-          //startDate = date.split(' to ')[0] + '-01T23:59:59.000Z';
           startDate = moment(new Date(date.split(' to ')[0])).startOf('month').format('YYYY-MM-DD')+'T00:00:00.000Z';
           endDate = moment(new Date(date.split(' to ')[0])).endOf('month').format('YYYY-MM-DD')+'T23:59:59.000Z';
         } else {
@@ -434,9 +442,14 @@
       data: {
         dataset: $('#dataset').val(),
         geoVariable: $('#geoVariable').val(),
+        stationVariable: $('#stationVariable').val(),
         frequency: frequency,
         startDate: startDate,
-        endDate: endDate
+        endDate: endDate,
+        lat1: $('#lat1').val(),
+        lon1: $('#lon1').val(),
+        lat2: $('#lat2').val(),
+        lon2: $('#lon2').val()
       },
       success: function(d) {
         plotGraph(d.data);
@@ -459,6 +472,16 @@
         }
       });
     }
+
+    $.ajax({
+      url: '/api/graphLongTerm',
+      data: {
+        geoVariable: $('#geoVariable').val(),
+      },
+      success: function(d) {
+        plotGraphLongTerm(d.data);
+      }
+    });
   }
 </script>
 
@@ -466,13 +489,21 @@
   /* graph data */
   var graphData = <%- JSON.stringify(graphData) %>
   function plotGraph(gData){
-    let trace = {
-      x: gData.dateList,
-      y: gData.valueList,
+    let trace1 = {
+      x: gData.geoData.dateList,
+      y: gData.geoData.valueList,
+      name: 'RCM Data',
       type: 'lines'
     };
 
-    let data = [trace];
+    let trace2 = {
+      x: gData.stationData.dateList,
+      y: gData.stationData.valueList,
+      name: 'Station Data',
+      type: 'lines'
+    };
+
+    let data = [trace1, trace2];
 
     let layout = {
       title: 'Average of '+ gData.geoAttrLongName + ' (' + gData.unit + ')',
@@ -514,6 +545,40 @@
     Plotly.newPlot('graphEachMonth', data, layout);
   }
   plotGraphEachMonth(gEachMonth);
+
+  /* graph long term */
+  var gLongTerm = <%- JSON.stringify(graphLongTerm) %>
+  function plotGraphLongTerm(gData){
+    let trace1 = {
+      x: gData.mpi_rf.dateList,
+      y: gData.mpi_rf.valueList,
+      name: 'MPI_RF',
+      type: 'lines'
+    };
+
+    let trace2 = {
+      x: gData.mpi_rcp45.dateList,
+      y: gData.mpi_rcp45.valueList,
+      name: 'MPI_RCP45',
+      type: 'lines'
+    };
+
+    let data = [trace1, trace2];
+
+    let layout = {
+      title: 'Average of '+ gData.geoAttrLongName + ' (' + gData.unit + ') in Long Term',
+      xaxis: {
+        autorange: true,
+        type: 'date'
+      },
+      yaxis: {
+        autorange: true,
+        type: 'linear',
+      }
+    };
+    Plotly.newPlot('graphLongTerm', data, layout);
+  }
+  plotGraphLongTerm(gLongTerm);
 </script>
 
 <script>
@@ -570,6 +635,66 @@
   }
   plotClimate(attribute, geoJSON, climateOptions);
   plotStation(stationAttribute, stationData, stationOptions);
+
+  map.region = {
+    isCroping: false,
+    isSelecting: false,
+    isPlotted: false,
+    lat1: null,
+    lon1: null,
+    lat2: null,
+    lon2: null,
+    bounds: [[null, null],[null, null]],
+    box: null
+  }
+
+  map.map.on('click', function(e) {
+    if(map.region.isCroping) {
+      let region = map.region;
+      if(!region.isSelecting) {
+        region.bounds[0][0] = e.latlng.lat;
+        region.bounds[0][1] = e.latlng.lng;
+        region.isSelecting = true;
+        if(region.isPlotted) {
+          map.map.removeLayer(region.box);
+        }
+        $('#lat1').val(e.latlng.lat);
+        $('#lon1').val(e.latlng.lng);
+        $('#lat2').val('');
+        $('#lon2').val('');
+      } else {
+        region.bounds[1][0] = e.latlng.lat;
+        region.bounds[1][1] = e.latlng.lng;
+        region.isSelecting = false;
+        region.isPlotted = true;
+        region.box = L.rectangle(region.bounds, {color: "#000000", fillOpacity: 0, weight: 2}).addTo(map.map);
+        $('#lat2').val(e.latlng.lat);
+        $('#lon2').val(e.latlng.lng);
+      }
+    }
+  });
+
+  function cropRegion() {
+    map.region.isCroping = !map.region.isCroping;
+  }
+  function resetRegion() {
+    map.map.removeLayer(map.region.box);
+    map.region = {
+      isCroping: false,
+      isSelecting: false,
+      isPlotted: false,
+      lat1: null,
+      lon1: null,
+      lat2: null,
+      lon2: null,
+      bounds: [[null, null],[null, null]],
+      box: null
+    }
+    $('#lat1').val('All');
+    $('#lon1').val('All');
+    $('#lat2').val('All');
+    $('#lon2').val('All');
+  }
 
 </script>
 
