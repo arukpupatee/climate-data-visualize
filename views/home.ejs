@@ -308,7 +308,9 @@
     maxDate: new Date(selector_data[0].date.max),
     position: 'bottom left',
     onShow: function(dp, animationComplete){
-      $('#datepicker-collapse').collapse('show');
+      setTimeout(function(){
+        $('#datepicker-collapse').collapse('show');
+      }, 50);
     },
     onHide: function(dp, animationComplete){
       $('#datepicker-collapse').collapse('hide');
