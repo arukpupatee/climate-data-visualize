@@ -307,13 +307,17 @@
     minDate: new Date(selector_data[0].date.min),
     maxDate: new Date(selector_data[0].date.max),
     position: 'bottom left',
-    onShow: function(dp, animationComplete){
-      setTimeout(function(){
-        $('#datepicker-collapse').collapse('show');
-      }, 50);
+    onShow: function(dp, animationCompleted){
+      if(animationCompleted){
+        setTimeout(function(){
+          $('#datepicker-collapse').collapse('show');
+        }, 50);
+      }
     },
-    onHide: function(dp, animationComplete){
-      $('#datepicker-collapse').collapse('hide');
+    onHide: function(dp, animationCompleted){
+      if(!animationCompleted){
+        $('#datepicker-collapse').collapse('hide');
+      }
     }
   }
   var startDatepicker;
