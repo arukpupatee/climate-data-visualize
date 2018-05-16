@@ -90,8 +90,15 @@
           <div class="row">
 
             <label for="date" class="col-md-3 col-form-label">Date</label>
-            <div class="col-md-9">
-              <input type="text" id='date' name='date' 
+            <div class="col-md-4">
+              <input type="text" id='startDate' name='startDate' 
+                class="form-control form-control-sm datepicker-here"
+                data-language='en'
+                data-position='bottom left'/>
+            </div>
+            <label for="date" class="col-md-1 col-form-label">to</label>
+            <div class="col-md-4">
+              <input type="text" id='endDate' name='endDate' 
                 class="form-control form-control-sm datepicker-here"
                 data-language='en'
                 data-position='bottom left'/>
@@ -297,8 +304,6 @@
     minView: 'years',
     view: 'years',
     dateFormat: 'yyyy',
-    range: true,
-    multipleDatesSeparator: ' to ',
     minDate: new Date(selector_data[0].date.min),
     maxDate: new Date(selector_data[0].date.max),
     position: 'bottom left',
@@ -309,12 +314,15 @@
       $('#datepicker-collapse').collapse('hide');
     }
   }
-  var dpicker;
+  var startDatepicker;
+  var endDatepicker;
   var startDate = datepickerOptions.minDate;
   var endDate = datepickerOptions.maxDate;
   setTimeout(function(){
-    dpicker = $('#date').datepicker(datepickerOptions).data('datepicker');
-    dpicker.selectDate([startDate, endDate]);
+    startDatepicker = $('#startDate').datepicker(datepickerOptions).data('datepicker');
+    startDatepicker.selectDate(startDate);
+    endDatepicker = $('#endDate').datepicker(datepickerOptions).data('datepicker');
+    endDatepicker.selectDate(endDate);
   }, 500);
 
   function changeDataset(event){
@@ -345,15 +353,16 @@
     datepickerOptions.maxDate = new Date(selected.date.max);
     startDate = datepickerOptions.minDate;
     endDate = datepickerOptions.maxDate;
-    dpicker = $('#date').datepicker(datepickerOptions).data('datepicker');
-    dpicker.selectDate([startDate, endDate]);
+    startDatepicker = $('#startDate').datepicker(datepickerOptions).data('datepicker');
+    startDatepicker.selectDate(startDate);
+    endDatepicker = $('#endDate').datepicker(datepickerOptions).data('datepicker');
+    endDatepicker.selectDate(endDate);
   }
 
   function changeFrequency(event){
     var frequency = event.target.value;
-    var date = document.getElementById('date').value;
-    startDate = new Date(date.split(' to ')[0]);
-    endDate = new Date(date.split(' to ')[1]);
+    startDate = new Date($('#startDate').val());
+    endDate = new Date($('#endDate').val());
     if(frequency == 'Yearly'){
       datepickerOptions.minView = 'years';
       datepickerOptions.view = 'years';
@@ -370,42 +379,45 @@
       datepickerOptions.dateFormat = 'yyyy-mm-dd'
       climateOptions['pr'].range = [0, 100]
     }
-    dpicker = $('#date').datepicker(datepickerOptions).data('datepicker');
-    dpicker.selectDate([startDate, endDate]);
+    startDatepicker = $('#startDate').datepicker(datepickerOptions).data('datepicker');
+    startDatepicker.selectDate(startDate);
+    endDatepicker = $('#endDate').datepicker(datepickerOptions).data('datepicker');
+    endDatepicker.selectDate(endDate);
   }
 
   function visualize() {
     let frequency = $('#frequency').val()
-    let date = $('#date').val();
-    let startDate;
-    let endDate;
-    if(date.split(' to ').length == 2) {
+    startDate = $('#startDate').val();
+    endDate = $('#endDate').val();
+    
+    if(endDate == '' || endDate == '-') { // if doesn't fill endDate
+      console.log(1);
       if(frequency == 'Yearly') {
-        startDate = moment(new Date(date.split(' to ')[0])).startOf('year').format('YYYY-MM-DD');
-        endDate = moment(new Date(date.split(' to ')[1])).endOf('year').format('YYYY-MM-DD');
+        sDate = moment(new Date(startDate)).startOf('year').format('YYYY-MM-DD');
+        eDate = moment(new Date(startDate)).endOf('year').format('YYYY-MM-DD');
       } else if(frequency == 'Monthly') {
-        //startDate = date.split(' to ')[0] + '-01T23:59:59.000Z';
-        startDate = moment(new Date(date.split(' to ')[0])).startOf('month').format('YYYY-MM-DD');
-        endDate = moment(new Date(date.split(' to ')[1])).endOf('month').format('YYYY-MM-DD');
+        sDate = moment(new Date(startDate)).startOf('month').format('YYYY-MM-DD');
+        eDate = moment(new Date(startDate)).endOf('month').format('YYYY-MM-DD');
       } else {
-        startDate = moment(new Date(date.split(' to ')[0])).format('YYYY-MM-DD');
-        endDate = moment(new Date(date.split(' to ')[1])).format('YYYY-MM-DD');
+        sDate = moment(new Date(startDate)).format('YYYY-MM-DD');
+        eDate = moment(new Date(startDate)).format('YYYY-MM-DD');
       }
+      console.log(sDate);
+      console.log(eDate);
     } else {
-      if(date.split(' to ')[0] != '') {
-        if(frequency == 'Yearly') {
-          startDate = moment(new Date(date.split(' to ')[0])).startOf('year').format('YYYY-MM-DD')+'T00:00:00.000Z';
-          endDate = moment(new Date(date.split(' to ')[0])).endOf('year').format('YYYY-MM-DD')+'T23:59:59.000Z';
-        } else if(frequency == 'Monthly') {
-          startDate = moment(new Date(date.split(' to ')[0])).startOf('month').format('YYYY-MM-DD')+'T00:00:00.000Z';
-          endDate = moment(new Date(date.split(' to ')[0])).endOf('month').format('YYYY-MM-DD')+'T23:59:59.000Z';
-        } else {
-          startDate = moment(new Date(date.split(' to ')[0])).format('YYYY-MM-DD')+'T00:00:00.000Z';
-          endDate = moment(new Date(date.split(' to ')[0])).format('YYYY-MM-DD')+'T23:59:59.000Z';
-        }
+      console.log(2);
+      if(frequency == 'Yearly') {
+        sDate = moment(new Date(startDate)).startOf('year').format('YYYY-MM-DD');
+        eDate = moment(new Date(endDate)).endOf('year').format('YYYY-MM-DD');
+      } else if(frequency == 'Monthly') {
+        sDate = moment(new Date(startDate)).startOf('month').format('YYYY-MM-DD');
+        eDate = moment(new Date(endDate)).endOf('month').format('YYYY-MM-DD');
       } else {
-        return 0;
+        sDate = moment(new Date(startDate)).format('YYYY-MM-DD');
+        eDate = moment(new Date(endDate)).format('YYYY-MM-DD');
       }
+      console.log(sDate);
+      console.log(eDate);
     }
     $.ajax({
       url: '/api/geodata',
@@ -413,8 +425,8 @@
         dataset: $('#dataset').val(),
         geoVariable: $('#geoVariable').val(),
         frequency: frequency,
-        startDate: startDate,
-        endDate: endDate
+        startDate: sDate,
+        endDate: eDate
       },
       success: function(d) {
         map.removeClimateData();
@@ -429,8 +441,8 @@
         dataset: $('#dataset').val(),
         stationVariable: $('#stationVariable').val(),
         frequency: frequency,
-        startDate: startDate,
-        endDate: endDate
+        startDate: sDate,
+        endDate: eDate
       },
       success: function(d) {
         map.removeStation();
@@ -444,8 +456,8 @@
         geoVariable: $('#geoVariable').val(),
         stationVariable: $('#stationVariable').val(),
         frequency: frequency,
-        startDate: startDate,
-        endDate: endDate,
+        startDate: sDate,
+        endDate: eDate,
         lat1: $('#lat1').val(),
         lon1: $('#lon1').val(),
         lat2: $('#lat2').val(),
@@ -464,8 +476,8 @@
           dataset: $('#dataset').val(),
           geoVariable: $('#geoVariable').val(),
           frequency: frequency,
-          startDate: startDate,
-          endDate: endDate
+          startDate: sDate,
+          endDate: eDate
         },
         success: function(d) {
           plotGraphEachMonth(d.data);

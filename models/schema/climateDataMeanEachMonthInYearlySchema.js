@@ -35,6 +35,7 @@ climateDataMeanEachMonthInYearlySchema.statics.findByDateRange = function (dateS
     }).lean();
     return new Promise((resolve, reject) =>{
         query.exec((err, results) =>{
+            if (err) throw(err);
             if (err) reject(error);
             resolve(results);
         });
