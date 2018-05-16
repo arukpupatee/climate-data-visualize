@@ -63,6 +63,11 @@ router.get('/', async (req, res, next) => {
   };
 
   var defaultSelect = selector[0];
+  for(let i=0; i < selector.length; i++){
+    if(selector[i].dataset == 'MPI_RF'){
+      defaultSelect = selector[i];
+    }
+  }
 
   var dataset = defaultSelect.dataset;
   var geoAttr = defaultSelect.geoVariables[0].name;
