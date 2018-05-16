@@ -180,7 +180,6 @@ stationDataSchema.statics.getAllStationMeanValueList = async function (dateStart
     for(let i=0; i < data.length; i++){
         let d = data[i];
         let date = moment(d.startDate).format('YYYY-MM-01');
-        console.log(date)
         if(dataEachDate[date] == null){
             dataEachDate[date] = {}
             dataEachDate[date].sum = d.value;
