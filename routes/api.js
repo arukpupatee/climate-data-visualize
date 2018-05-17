@@ -23,10 +23,7 @@ router.get('/geodata', async (req, res, next) => {
     var climateInfo = await ClimateDataInfo.findOne({name:q.dataset});
     var climateData = await ClimateData(q.dataset, q.geoVariable, q.frequency).getMeanValue(new Date(q.startDate), new Date(q.endDate));
     obj.attribute = q.geoVariable;
-    //obj.data = grid2geojson.toGeoJSON(climateInfo.lat, climateInfo.lon, climateData.value);
     obj.geoData = climateData.value;
-    //obj.geoLat = climateInfo[0].lat;
-    //obj.geoLon = climateInfo[0].lon;
     res.json(obj);
 });
 
@@ -45,12 +42,14 @@ router.get('/graphData', async (req, res, next) => {
     var obj = {};
     var climateInfo = await ClimateDataInfo.findOne({name:q.dataset});
     obj.data = {};
-    //if(q.lat1 == 'All') {
+    if(q.lat1 == 'All') {
         obj.data.geoData = await ClimateData(q.dataset, q.geoVariable, q.frequency).getAreaMeanValueList(new Date(q.startDate), new Date(q.endDate));
-    //} else {
-        //obj.data = await ClimateData(q.dataset, q.geoVariable, q.frequency).getSpecificAreaMeanValueList(new Date(q.startDate), new Date(q.endDate), climateInfo, q.lat1, q.lon1, q.lat2, q.lon2);
-    //}
-    obj.data.stationData = await StationData(q.dataset, q.stationVariable, q.frequency).getAllStationMeanValueList(q.startDate, q.endDate);
+        obj.data.stationData = await StationData(q.dataset, q.stationVariable, q.frequency).getAllStationMeanValueList(q.startDate, q.endDate);
+    } else {
+        obj.data.geoData = await ClimateData(q.dataset, q.geoVariable, q.frequency).getSpecificAreaMeanValueList(new Date(q.startDate), new Date(q.endDate), climateInfo, q.lat1, q.lon1, q.lat2, q.lon2);
+        obj.data.stationData = await StationData(q.dataset, q.stationVariable, q.frequency).getSpecificAreaStationMeanValueList(q.startDate, q.endDate, q.lat1, q.lon1, q.lat2, q.lon2);
+    }
+    
     var geoAttrLongName = climateInfo.variables[q.geoVariable].long_name;
     var geoAttrUnit = climateInfo.variables[q.geoVariable].units;
     if(q.geoVariable == 'pr') {

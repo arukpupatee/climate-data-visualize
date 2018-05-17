@@ -144,7 +144,7 @@
           </div>
 
           <div class="col-md-2">
-            <button type="button" class="btn btn-primary btn-sm" data-toggle="button" aria-pressed="false" onclick='cropRegion()'>Crop</button>
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="button" aria-pressed="false" onclick='cropRegion()' id="cropBtn">Crop</button>
             <button type="button" class="btn btn-warning btn-sm" onclick='resetRegion()'>Reset</button>
           </div>
         
@@ -254,7 +254,7 @@
       let legend = this.legend.pop();
       this.map.removeControl(legend);
     }
-    addStation(stationArray, variable, variable_unit) {
+    addStation(stationArray, options) {
       var icn = new L.Icon.Default;
       icn.options.iconSize = [10,20];
       icn.options.iconAnchor = [0,0];
@@ -269,13 +269,13 @@
           icon: icn
         }
         let marker;
-        //if(variable != 'Rain'){
+        if(options.name != 'Precipitation'){
           marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
-            .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>'+variable+': '+stationData.value+' '+variable_unit);  
-        //} else {
-        //  marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
-        //    .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>'+variable+': '+((stationData.value==1)?'Fall':'Not fall'));  
-        //}
+            .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>'+options.name+': '+stationData.value+' '+options.unit);  
+        } else {
+          marker = L.marker([stationData.lat, stationData.lon], markerOptions).addTo(map)
+            .bindPopup('Station: '+stationData.code+'<br>Lat: '+stationData.lat+'<br>Lon: '+stationData.lon+'<br>'+options.name+': '+stationData.value+' '+options.unit+'<br>Rainfall: '+stationData.rainfall+'Days');
+        }
         
         this.marker.push(marker);
       }
@@ -397,7 +397,6 @@
     endDate = $('#endDate').val();
     
     if(endDate == '' || endDate == '-') { // if doesn't fill endDate
-      console.log(1);
       if(frequency == 'Yearly') {
         sDate = moment(new Date(startDate)).startOf('year').format('YYYY-MM-DD');
         eDate = moment(new Date(startDate)).endOf('year').format('YYYY-MM-DD');
@@ -408,10 +407,7 @@
         sDate = moment(new Date(startDate)).format('YYYY-MM-DD');
         eDate = moment(new Date(startDate)).format('YYYY-MM-DD');
       }
-      console.log(sDate);
-      console.log(eDate);
     } else {
-      console.log(2);
       if(frequency == 'Yearly') {
         sDate = moment(new Date(startDate)).startOf('year').format('YYYY-MM-DD');
         eDate = moment(new Date(endDate)).endOf('year').format('YYYY-MM-DD');
@@ -422,8 +418,6 @@
         sDate = moment(new Date(startDate)).format('YYYY-MM-DD');
         eDate = moment(new Date(endDate)).format('YYYY-MM-DD');
       }
-      console.log(sDate);
-      console.log(eDate);
     }
     $.ajax({
       url: '/api/geodata',
@@ -439,6 +433,9 @@
         data = d.geoData
         geoJSON = toGeoJSON(lat, lon, mask, data);
         plotClimate(d.attribute, geoJSON, climateOptions);
+        map.map.removeLayer(map.region.box);
+        map.region.box = L.rectangle(map.region.bounds, {color: "#000000", fillOpacity: 0, weight: 2}).addTo(map.map);
+        
       }
     });
     $.ajax({
@@ -638,8 +635,8 @@
       unit: '°C'
     },
     'rain': {
-      name: 'Rainfall',
-      unit: 'days'
+      name: 'Precipitation',
+      unit: 'mm'
     }
   }
 
@@ -649,7 +646,7 @@
   }
   function plotStation(sAttr, sData, stationOpt) {
     var sOptions = stationOpt[sAttr];
-    map.addStation(sData, sOptions.name, sOptions.unit);
+    map.addStation(sData, sOptions);
   }
   plotClimate(attribute, geoJSON, climateOptions);
   plotStation(stationAttribute, stationData, stationOptions);
@@ -670,30 +667,55 @@
     if(map.region.isCroping) {
       let region = map.region;
       if(!region.isSelecting) {
-        region.bounds[0][0] = e.latlng.lat;
-        region.bounds[0][1] = e.latlng.lng;
+        region.lat1 = e.latlng.lat;
+        region.lon1 = e.latlng.lng;
+        
         region.isSelecting = true;
         if(region.isPlotted) {
           map.map.removeLayer(region.box);
         }
-        $('#lat1').val(e.latlng.lat);
-        $('#lon1').val(e.latlng.lng);
+        $('#lat1').val(region.lat1);
+        $('#lon1').val(region.lon1);
         $('#lat2').val('');
         $('#lon2').val('');
       } else {
-        region.bounds[1][0] = e.latlng.lat;
-        region.bounds[1][1] = e.latlng.lng;
+        region.lat2 = e.latlng.lat;
+        region.lon2 = e.latlng.lng;
+        //normal crop is top-left to bottom-right
+        let temp;
+        if(region.lat1 < region.lat2) { //if crop bottom-left to top-right
+          temp = region.lat1;
+          region.lat1 = region.lat2;
+          region.lat2 = temp;
+        }
+        if(region.lon1 > region.lon2) { //if crop bottom-right to top-left
+          temp = region.lon1;
+          region.lon1 = region.lon2;
+          region.lon2 = temp;
+        }
+        region.bounds[0][0] = region.lat1;
+        region.bounds[0][1] = region.lon1;
+        region.bounds[1][0] = region.lat2;
+        region.bounds[1][1] = region.lon2;
         region.isSelecting = false;
         region.isPlotted = true;
         region.box = L.rectangle(region.bounds, {color: "#000000", fillOpacity: 0, weight: 2}).addTo(map.map);
-        $('#lat2').val(e.latlng.lat);
-        $('#lon2').val(e.latlng.lng);
+        $('#lat1').val(region.lat1);
+        $('#lon1').val(region.lon1);
+        $('#lat2').val(region.lat2);
+        $('#lon2').val(region.lon2);
       }
     }
   });
 
   function cropRegion() {
+    
     map.region.isCroping = !map.region.isCroping;
+    if(map.region.isCroping){
+      $('#cropBtn').removeClass('btn-primary').addClass('btn-success');
+    } else {
+      $('#cropBtn').removeClass('btn-success').addClass('btn-primary');
+    }
   }
   function resetRegion() {
     map.map.removeLayer(map.region.box);

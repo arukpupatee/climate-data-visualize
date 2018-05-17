@@ -96,49 +96,53 @@ climateDataSchema.statics.getSpecificAreaMeanValueList = async function (dateSta
     var lons = climateInfo.lon;
 
     var latMin, lonMin, latMax, lonMax;
-    if(lat1 >= lat2) {
-        latMax = lat1;
-        latMin = lat2;
-    } else {
-        latMax = lat2;
-        latMin = lat1;
-    }
-    if(lon1 >= lon2) {
-        lonMax = lon1;
-        lonMin = lon2;
-    } else {
-        lonMax = lon2;
-        lonMin = lon1;
-    }
+    latMin = lat2;
+    latMax = lat1;
+    lonMin = lon1;
+    lonMax = lon2;
 
-    var latMinIdx = lats[0]
-    var lonMinIdx = lons[0]
-    var latMaxIdx = lats[lats.length-1]
-    var lonMaxIdx = lons[lons.length-1]
+    var latMinIdx = 0;
+    var lonMinIdx = 0;
+    var latMaxIdx = lats.length-1;
+    var lonMaxIdx = lons.length-1;
 
     for(let i=0; i<lats.length; i++) {
-        if(latMin >= lats[i]){
+        if(latMin <= lats[i]){
             latMinIdx = i;
             break;
         }
     }
 
     for(let i=0; i<lons.length; i++) {
-        if(lonMin >= lons[i]){
+        if(lonMin <= lons[i]){
             lonMinIdx = i;
             break;
         }
     }
 
-    for(let d=1; d < data.length; d++) {
+    for(let i=lats.length-1; i>=0; i--) {
+        if(latMax >= lats[i]){
+            latMaxIdx = i;
+            break;
+        }
+    }
+
+    for(let i=lons.length-1; i>=0; i--) {
+        if(lonMax >= lons[i]){
+            lonMaxIdx = i;
+            break;
+        }
+    }
+
+    for(let d=0; d < data.length; d++) {
         let value = data[d].value;
         let sumValue = 0;
-        for(let r=0; r < value.length; r++) {
-            for(let c=0; c < value[r].length; c++) {
+        for(let r=latMinIdx; r <= latMaxIdx; r++) {
+            for(let c=lonMinIdx; c <= lonMaxIdx; c++) {
                 sumValue = sumValue + value[r][c];
             }
         }
-        let meanValue = sumValue/ (value.length * value[0].length)
+        let meanValue = sumValue/ ((latMaxIdx-latMinIdx+1) * (lonMaxIdx-lonMinIdx+1))
         valueList.push(meanValue);
         dateList.push(data[d].date);
     }

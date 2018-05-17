@@ -93,6 +93,73 @@ climateDataSchema.statics.getAreaMeanValueList = async function (dateStart, date
     };
 }
 
+climateDataSchema.statics.getSpecificAreaMeanValueList = async function (dateStart, dateEnd, climateInfo, lat1, lon1, lat2, lon2){
+    var data = await this.findByDateRange(dateStart, dateEnd);
+
+    var valueList = [];
+    var dateList = [];
+
+    var lats = climateInfo.lat;
+    var lons = climateInfo.lon;
+
+    var latMin, lonMin, latMax, lonMax;
+    latMin = lat2;
+    latMax = lat1;
+    lonMin = lon1;
+    lonMax = lon2;
+
+    var latMinIdx = 0;//lats[0]
+    var lonMinIdx = 0;//lons[0]
+    var latMaxIdx = lats.length-1;//lats[lats.length-1]
+    var lonMaxIdx = lons.length-1;//lons[lons.length-1]
+
+    for(let i=0; i<lats.length; i++) {
+        if(latMin <= lats[i]){
+            latMinIdx = i;
+            break;
+        }
+    }
+
+    for(let i=0; i<lons.length; i++) {
+        if(lonMin <= lons[i]){
+            lonMinIdx = i;
+            break;
+        }
+    }
+
+    for(let i=lats.length-1; i>=0; i--) {
+        if(latMax >= lats[i]){
+            latMaxIdx = i;
+            break;
+        }
+    }
+
+    for(let i=lons.length-1; i>=0; i--) {
+        if(lonMax >= lons[i]){
+            lonMaxIdx = i;
+            break;
+        }
+    }
+
+    for(let d=0; d < data.length; d++) {
+        let value = data[d].value;
+        let sumValue = 0;
+        for(let r=latMinIdx; r <= latMaxIdx; r++) {
+            for(let c=lonMinIdx; c <= lonMaxIdx; c++) {
+                sumValue = sumValue + value[r][c];
+            }
+        }
+        let meanValue = sumValue/ ((latMaxIdx-latMinIdx+1) * (lonMaxIdx-lonMinIdx+1))
+        valueList.push(meanValue);
+        dateList.push(data[d].startDate);
+    }
+
+    return {
+        valueList: valueList,
+        dateList: dateList
+    };
+}
+
 climateDataSchema.statics.getSumValue = async function (dateStart, dateEnd){
     var data = await this.findByDateRange(dateStart, dateEnd);
 

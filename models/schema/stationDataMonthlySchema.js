@@ -201,4 +201,44 @@ stationDataSchema.statics.getAllStationMeanValueList = async function (dateStart
     };
 }
 
+stationDataSchema.statics.getSpecificAreaStationMeanValueList = async function (dateStart, dateEnd, lat1, lon1, lat2, lon2){
+    var data = await this.findByDateRange(dateStart, dateEnd);
+
+    var valueList = [];
+    var dateList = [];
+
+    var dataEachDate = {};
+
+    var latMin, lonMin, latMax, lonMax;
+    latMin = lat2;
+    latMax = lat1;
+    lonMin = lon1;
+    lonMax = lon2;
+
+    for(let i=0; i < data.length; i++){
+        let d = data[i];
+        if(latMin < d.lat && d.lat < latMax && lonMin < d.lon && d.lon < lonMax){
+            let date = moment(d.startDate).format('YYYY-MM-01');
+            if(dataEachDate[date] == null){
+                dataEachDate[date] = {}
+                dataEachDate[date].sum = d.value;
+                dataEachDate[date].count = 1
+            } else {
+                dataEachDate[date].sum = dataEachDate[date].sum + d.value;
+                dataEachDate[date].count = dataEachDate[date].count + 1;
+            }
+        }
+    }
+
+    Object.keys(dataEachDate).map((date) => {
+        valueList.push( (dataEachDate[date].sum/dataEachDate[date].count) )
+        dateList.push(new Date(date));
+    });
+
+    return {
+        valueList: valueList,
+        dateList: dateList
+    };
+}
+
 module.exports = stationDataSchema;
