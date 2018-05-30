@@ -17,6 +17,14 @@ router.use(bodyParser.urlencoded({
   extended: true
 }));
 
+function fixedArray(arr, n) {
+    let a;
+    a = arr.map(function(each_element){
+      return Number(each_element.toFixed(2));
+    });
+    return a;
+}
+
 router.get('/geodata', async (req, res, next) => {
     var q = req.query;
     var obj = {};
@@ -49,6 +57,9 @@ router.get('/graphData', async (req, res, next) => {
         obj.data.geoData = await ClimateData(q.dataset, q.geoVariable, q.frequency).getSpecificAreaMeanValueList(new Date(q.startDate), new Date(q.endDate), climateInfo, q.lat1, q.lon1, q.lat2, q.lon2);
         obj.data.stationData = await StationData(q.dataset, q.stationVariable, q.frequency).getSpecificAreaStationMeanValueList(q.startDate, q.endDate, q.lat1, q.lon1, q.lat2, q.lon2);
     }
+
+    obj.data.geoData.valueList = fixedArray(obj.data.geoData.valueList, 2);
+    obj.data.stationData.valueList = fixedArray(obj.data.stationData.valueList, 2);
     
     var geoAttrLongName = climateInfo.variables[q.geoVariable].long_name;
     var geoAttrUnit = climateInfo.variables[q.geoVariable].units;
@@ -69,6 +80,9 @@ router.get('/graphEachMonth', async (req, res, next) => {
     var obj = {};
     var climateInfo = await ClimateDataInfo.findOne({name:q.dataset});
     obj.data = await ClimateDataMeanEachMonthInYearly(q.dataset, q.geoVariable).getValueList(new Date(q.startDate), new Date(q.endDate));
+    
+    obj.data.valueList = fixedArray(obj.data.valueList, 2);
+    
     var geoAttrLongName = climateInfo.variables[q.geoVariable].long_name;
     var geoAttrUnit = climateInfo.variables[q.geoVariable].units;
     if(q.geoVariable == 'pr') {
@@ -94,6 +108,9 @@ router.get('/graphLongTerm', async (req, res, next) => {
     var mpi_rcp45_date_max = moment(Math.max.apply(null, climateInfo[1].date)).format('YYYY-MM-DD');
     obj.data.mpi_rf = await ClimateData(climateInfo[0].name, q.geoVariable, 'Yearly').getAreaMeanValueList(mpi_rf_date_min, mpi_rf_date_max);
     obj.data.mpi_rcp45 = await ClimateData(climateInfo[1].name, q.geoVariable, 'Yearly').getAreaMeanValueList(mpi_rcp45_date_min, mpi_rcp45_date_max);
+    
+    obj.data.mpi_rf.valueList = fixedArray(obj.data.mpi_rf.valueList, 2);
+    obj.data.mpi_rcp45.valueList = fixedArray(obj.data.mpi_rcp45.valueList, 2);
     
     var geoAttrLongName = climateInfo[0].variables[q.geoVariable].long_name;
     var geoAttrUnit = climateInfo[0].variables[q.geoVariable].units;

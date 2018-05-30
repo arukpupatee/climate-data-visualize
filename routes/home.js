@@ -9,6 +9,14 @@ var ClimateData = require('../models/ClimateData');
 var StationData = require('../models/StationData');
 var ClimateDataMeanEachMonthInYearly = require('../models/ClimateDataMeanEachMonthInYearly');
 
+function fixedArray(arr, n){
+  let a;
+  a = arr.map(function(each_element){
+    return Number(each_element.toFixed(2));
+  });
+  return a;
+}
+
 /* GET home page. */
 router.get('/', async (req, res, next) => {
   //var info = await ClimateDataInfo.findOne({name:'MPI_RF'});
@@ -100,6 +108,8 @@ router.get('/', async (req, res, next) => {
   obj.graphData = {};
   obj.graphData.geoData = await ClimateData(dataset, geoAttr, freq).getAreaMeanValueList(dateStart, dateEnd);
   obj.graphData.stationData = await StationData(dataset, sAttr, freq).getAllStationMeanValueList(dateStart, dateEnd);
+  obj.graphData.geoData.valueList = fixedArray(obj.graphData.geoData.valueList, 2);
+  obj.graphData.stationData.valueList = fixedArray(obj.graphData.stationData.valueList, 2);
 
   var geoAttrUnit = climateInfo[defaultIndex].variables[geoAttr].units;
   if(geoAttr == 'pr') {
@@ -114,6 +124,7 @@ router.get('/', async (req, res, next) => {
 
   if(freq == 'Yearly'){
     obj.graphEachMonthData = await ClimateDataMeanEachMonthInYearly(dataset, geoAttr).getValueList(dateStart, dateEnd);
+    obj.graphEachMonthData.valueList = fixedArray(obj.graphEachMonthData.valueList, 2);
     obj.graphEachMonthData.geoAttrLongName = geoAttrLongName;
     obj.graphEachMonthData.unit = geoAttrUnit;
   }
@@ -121,6 +132,8 @@ router.get('/', async (req, res, next) => {
   obj.graphLongTerm = {};
   obj.graphLongTerm.mpi_rf = await ClimateData('MPI_RF', geoAttr, 'Yearly').getAreaMeanValueList(selector[0].date.min, selector[0].date.max);
   obj.graphLongTerm.mpi_rcp45 = await ClimateData('MPI_RCP45', geoAttr, 'Yearly').getAreaMeanValueList(selector[1].date.min, selector[1].date.max);
+  obj.graphLongTerm.mpi_rf.valueList = fixedArray(obj.graphLongTerm.mpi_rf.valueList, 2);
+  obj.graphLongTerm.mpi_rcp45.valueList = fixedArray(obj.graphLongTerm.mpi_rcp45.valueList, 2);
   obj.graphLongTerm.geoAttrLongName = geoAttrLongName;
   if(geoAttr == 'pr') {
     obj.graphLongTerm.unit = 'mm/year';

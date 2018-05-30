@@ -43,7 +43,7 @@
           <div class="row">
             <label for="geoVariable" class="col-md-3 col-form-label">Geo Variable</label>
             <div class="col-md-9">
-              <select id="geoVariable" name="geoVariable" class="form-control form-control-sm">
+              <select id="geoVariable" name="geoVariable" class="form-control form-control-sm" onchange="changeGeovariable(event);">
                 <option selected value='<%= selector[0].geoVariables[0].name %>'><%= selector[0].geoVariables[0].longName %></option>
                 <% for(var i=1; i<selector[0].geoVariables.length; i++){ %>
                   <option value='<%= selector[0].geoVariables[i].name %>'><%= selector[0].geoVariables[i].longName %> %></option>
@@ -73,7 +73,7 @@
 
         <div class="col-md-3">
           <div class="row">
-            <label for="frequency" class="col-md-3 col-form-label">Frequency</label>
+            <label for="frequency" class="col-md-3 col-form-label">Period</label>
             <div class="col-md-9">
               <select id="frequency" name="frequency" class="form-control form-control-sm" onchange="changeFrequency(event);">
                 <option selected><%= selector[0].frequency[0] %></option>
@@ -365,6 +365,27 @@
     endDatepicker.selectDate(endDate);
   }
 
+  function changeGeovariable(event){
+    var geoVariable = event.target.value;
+
+    var stationVariable;
+    if (geoVariable == "tas") {
+      stationVariable = "meantemp";
+    } else if (geoVariable == "pr") {
+      stationVariable = "rain";
+    }
+
+    var stationSelector = document.getElementById('stationVariable');
+    
+    var opts = stationSelector.options;
+    for (var opt, j = 0; opt = opts[j]; j++) {
+      if (opt.value == stationVariable) {
+        stationSelector.selectedIndex = j;
+        break;
+      }
+    }
+  }
+
   function changeFrequency(event){
     var frequency = event.target.value;
     startDate = new Date($('#startDate').val());
@@ -395,7 +416,7 @@
     let frequency = $('#frequency').val()
     startDate = $('#startDate').val();
     endDate = $('#endDate').val();
-    
+
     if(endDate == '' || endDate == '-') { // if doesn't fill endDate
       if(frequency == 'Yearly') {
         sDate = moment(new Date(startDate)).startOf('year').format('YYYY-MM-DD');
@@ -419,62 +440,27 @@
         eDate = moment(new Date(endDate)).format('YYYY-MM-DD');
       }
     }
-    $.ajax({
-      url: '/api/geodata',
-      data: {
-        dataset: $('#dataset').val(),
-        geoVariable: $('#geoVariable').val(),
-        frequency: frequency,
-        startDate: sDate,
-        endDate: eDate
-      },
-      success: function(d) {
-        map.removeClimateData();
-        data = d.geoData
-        geoJSON = toGeoJSON(lat, lon, mask, data);
-        plotClimate(d.attribute, geoJSON, climateOptions);
-        map.map.removeLayer(map.region.box);
-        map.region.box = L.rectangle(map.region.bounds, {color: "#000000", fillOpacity: 0, weight: 2}).addTo(map.map);
-        
-      }
-    });
-    $.ajax({
-      url: '/api/station',
-      data: {
-        dataset: $('#dataset').val(),
-        stationVariable: $('#stationVariable').val(),
-        frequency: frequency,
-        startDate: sDate,
-        endDate: eDate
-      },
-      success: function(d) {
-        map.removeStation();
-        plotStation(d.attribute, d.data, stationOptions);
-      }
-    });
-    $.ajax({
-      url: '/api/graphData',
-      data: {
-        dataset: $('#dataset').val(),
-        geoVariable: $('#geoVariable').val(),
-        stationVariable: $('#stationVariable').val(),
-        frequency: frequency,
-        startDate: sDate,
-        endDate: eDate,
-        lat1: $('#lat1').val(),
-        lon1: $('#lon1').val(),
-        lat2: $('#lat2').val(),
-        lon2: $('#lon2').val()
-      },
-      success: function(d) {
-        plotGraph(d.data);
-      }
-    });
 
-    Plotly.purge('graphEachMonth');
-    if(frequency == 'Yearly') {
+    var isOk = true;
+
+    var duration = moment.duration(moment(eDate).diff(moment(sDate)));
+    let years = duration.asYears();
+    if(frequency == 'Monthly') {
+      if (years > 10) {
+        isOk = false;
+        alert("Can't query in date range more than 10 years if Period = 'Monthly'");
+      }
+    } else if(frequency == 'Daily') {
+      if (years > 2) {
+        isOk = false;
+        alert("Can't query in date range more than 2 years if Period = 'Daily'");
+      }
+    }
+    
+
+    if (isOk) {
       $.ajax({
-        url: '/api/graphEachMonth',
+        url: '/api/geodata',
         data: {
           dataset: $('#dataset').val(),
           geoVariable: $('#geoVariable').val(),
@@ -483,20 +469,75 @@
           endDate: eDate
         },
         success: function(d) {
-          plotGraphEachMonth(d.data);
+          map.removeClimateData();
+          data = d.geoData
+          geoJSON = toGeoJSON(lat, lon, mask, data);
+          plotClimate(d.attribute, geoJSON, climateOptions);
+          map.map.removeLayer(map.region.box);
+          map.region.box = L.rectangle(map.region.bounds, {color: "#000000", fillOpacity: 0, weight: 2}).addTo(map.map);
+          
+        }
+      });
+      $.ajax({
+        url: '/api/station',
+        data: {
+          dataset: $('#dataset').val(),
+          stationVariable: $('#stationVariable').val(),
+          frequency: frequency,
+          startDate: sDate,
+          endDate: eDate
+        },
+        success: function(d) {
+          map.removeStation();
+          plotStation(d.attribute, d.data, stationOptions);
+        }
+      });
+      $.ajax({
+        url: '/api/graphData',
+        data: {
+          dataset: $('#dataset').val(),
+          geoVariable: $('#geoVariable').val(),
+          stationVariable: $('#stationVariable').val(),
+          frequency: frequency,
+          startDate: sDate,
+          endDate: eDate,
+          lat1: $('#lat1').val(),
+          lon1: $('#lon1').val(),
+          lat2: $('#lat2').val(),
+          lon2: $('#lon2').val()
+        },
+        success: function(d) {
+          plotGraph(d.data);
+        }
+      });
+
+      Plotly.purge('graphEachMonth');
+      if(frequency == 'Yearly') {
+        $.ajax({
+          url: '/api/graphEachMonth',
+          data: {
+            dataset: $('#dataset').val(),
+            geoVariable: $('#geoVariable').val(),
+            frequency: frequency,
+            startDate: sDate,
+            endDate: eDate
+          },
+          success: function(d) {
+            plotGraphEachMonth(d.data);
+          }
+        });
+      }
+
+      $.ajax({
+        url: '/api/graphLongTerm',
+        data: {
+          geoVariable: $('#geoVariable').val(),
+        },
+        success: function(d) {
+          plotGraphLongTerm(d.data);
         }
       });
     }
-
-    $.ajax({
-      url: '/api/graphLongTerm',
-      data: {
-        geoVariable: $('#geoVariable').val(),
-      },
-      success: function(d) {
-        plotGraphLongTerm(d.data);
-      }
-    });
   }
 </script>
 
