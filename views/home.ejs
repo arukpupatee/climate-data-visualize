@@ -532,6 +532,11 @@
         url: '/api/graphLongTerm',
         data: {
           geoVariable: $('#geoVariable').val(),
+          stationVariable: $('#stationVariable').val(),
+          lat1: $('#lat1').val(),
+          lon1: $('#lon1').val(),
+          lat2: $('#lat2').val(),
+          lon2: $('#lon2').val()
         },
         success: function(d) {
           plotGraphLongTerm(d.data);
@@ -556,10 +561,23 @@
       x: gData.stationData.dateList,
       y: gData.stationData.valueList,
       name: 'Station Data',
-      type: 'lines'
+      type: 'lines',
+      line: {
+        color: 'green'
+      }
     };
 
-    let data = [trace1, trace2];
+    let trace3 = {
+      x: gData.predictData.dateList,
+      y: gData.predictData.valueList,
+      name: 'Predict Data',
+      type: 'lines',
+      line: {
+        color: 'red'
+      }
+    };
+
+    let data = [trace1, trace2, trace3];
 
     let layout = {
       title: 'Average of '+ gData.geoAttrLongName + ' (' + gData.unit + ')',
@@ -619,7 +637,21 @@
       type: 'lines'
     };
 
-    let data = [trace1, trace2];
+    let trace3 = {
+      x: gData.stationData.dateList,
+      y: gData.stationData.valueList,
+      name: 'Station Data',
+      type: 'lines'
+    };
+
+    let trace4 = {
+      x: gData.predictData.dateList,
+      y: gData.predictData.valueList,
+      name: 'Predict Data',
+      type: 'lines'
+    };
+
+    let data = [trace1, trace2, trace3, trace4];
 
     let layout = {
       title: 'Average of '+ gData.geoAttrLongName + ' (' + gData.unit + ') in Long Term',

@@ -7,6 +7,7 @@ var ClimateDataInfo = require('../models/ClimateDataInfo');
 var StationInfo = require('../models/StationDataInfo');
 var ClimateData = require('../models/ClimateData');
 var StationData = require('../models/StationData');
+var PredictData = require('../models/PredictData');
 var ClimateDataMeanEachMonthInYearly = require('../models/ClimateDataMeanEachMonthInYearly');
 
 function fixedArray(arr, n){
@@ -77,6 +78,14 @@ router.get('/', async (req, res, next) => {
     }
   }
 
+  /* add predicted station to MPI_RCP45 */
+  for(let i=0; i < selector.length; i++){
+    if(selector[i].dataset == 'MPI_RCP45'){
+      selector[i].stationVariables.push('meantemp');
+      selector[i].stationVariables.push('rain');
+    }
+  }
+
   var obj = {
     selector: selector
   };
@@ -108,8 +117,10 @@ router.get('/', async (req, res, next) => {
   obj.graphData = {};
   obj.graphData.geoData = await ClimateData(dataset, geoAttr, freq).getAreaMeanValueList(dateStart, dateEnd);
   obj.graphData.stationData = await StationData(dataset, sAttr, freq).getAllStationMeanValueList(dateStart, dateEnd);
+  obj.graphData.predictData = await PredictData(dataset, sAttr, freq).getAllStationMeanValueList(dateStart, dateEnd);
   obj.graphData.geoData.valueList = fixedArray(obj.graphData.geoData.valueList, 2);
   obj.graphData.stationData.valueList = fixedArray(obj.graphData.stationData.valueList, 2);
+  obj.graphData.predictData.valueList = fixedArray(obj.graphData.predictData.valueList, 2);
 
   var geoAttrUnit = climateInfo[defaultIndex].variables[geoAttr].units;
   if(geoAttr == 'pr') {
@@ -132,8 +143,27 @@ router.get('/', async (req, res, next) => {
   obj.graphLongTerm = {};
   obj.graphLongTerm.mpi_rf = await ClimateData('MPI_RF', geoAttr, 'Yearly').getAreaMeanValueList(selector[0].date.min, selector[0].date.max);
   obj.graphLongTerm.mpi_rcp45 = await ClimateData('MPI_RCP45', geoAttr, 'Yearly').getAreaMeanValueList(selector[1].date.min, selector[1].date.max);
+  obj.graphLongTerm.mpi_rf.valueList.push(obj.graphLongTerm.mpi_rcp45.valueList[0])
+  obj.graphLongTerm.mpi_rf.dateList.push(obj.graphLongTerm.mpi_rcp45.dateList[0])
   obj.graphLongTerm.mpi_rf.valueList = fixedArray(obj.graphLongTerm.mpi_rf.valueList, 2);
   obj.graphLongTerm.mpi_rcp45.valueList = fixedArray(obj.graphLongTerm.mpi_rcp45.valueList, 2);
+
+  obj.graphLongTerm.stationData = await StationData('MPI_RF', sAttr, 'Yearly').getAllStationMeanValueList(selector[0].date.min, selector[0].date.max);
+  obj.graphLongTerm.stationData_mpi_rcp45 = await StationData('MPI_RCP45', sAttr, 'Yearly').getAllStationMeanValueList(selector[1].date.min, selector[1].date.max);
+  for(let i=0; i < obj.graphLongTerm.stationData_mpi_rcp45.valueList.length; i++){
+    obj.graphLongTerm.stationData.valueList.push(obj.graphLongTerm.stationData_mpi_rcp45.valueList[i]);
+    obj.graphLongTerm.stationData.dateList.push(obj.graphLongTerm.stationData_mpi_rcp45.dateList[i]);
+  }
+  obj.graphLongTerm.stationData.valueList = fixedArray(obj.graphLongTerm.stationData.valueList, 2);
+  
+  obj.graphLongTerm.predictData = await PredictData('MPI_RF', sAttr, 'Yearly').getAllStationMeanValueList(selector[0].date.min, selector[0].date.max);
+  obj.graphLongTerm.predictData_mpi_rcp45 = await PredictData('MPI_RCP45', sAttr, 'Yearly').getAllStationMeanValueList(selector[1].date.min, selector[1].date.max);
+  for(let i=0; i < obj.graphLongTerm.predictData_mpi_rcp45.valueList.length; i++){
+    obj.graphLongTerm.predictData.valueList.push(obj.graphLongTerm.predictData_mpi_rcp45.valueList[i]);
+    obj.graphLongTerm.predictData.dateList.push(obj.graphLongTerm.predictData_mpi_rcp45.dateList[i]);
+  }
+  obj.graphLongTerm.predictData.valueList = fixedArray(obj.graphLongTerm.predictData.valueList, 2);
+  
   obj.graphLongTerm.geoAttrLongName = geoAttrLongName;
   if(geoAttr == 'pr') {
     obj.graphLongTerm.unit = 'mm/year';

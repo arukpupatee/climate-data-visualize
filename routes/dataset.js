@@ -9,6 +9,7 @@ var ClimateDataInfo = require('../models/ClimateDataInfo');
 var StationDataInfo = require('../models/StationDataInfo');
 var ClimateData = require('../models/ClimateData');
 var StationData = require('../models/StationData');
+var PredictData = require('../models/PredictData');
 var ClimateDataMeanEachMonthInYearly = require('../models/ClimateDataMeanEachMonthInYearly');
 
 router.use(bodyParser.json());
@@ -195,6 +196,266 @@ router.get('/station', async (req, res, next) => {
     await insert_rain(rain_info.code);
     
 });
+
+router.get('/station_rcp45', async (req, res, next) => {
+    res.send('uploading station');
+    
+    let dirname_meantemp = 'F:/Lesson/Project/Dataset/Climate/upload_to_web/data/station/meantemp_rcp45/';
+    var d = fs.readFileSync(dirname_meantemp+'Station_Info.json', 'utf8');
+    d = JSON.parse(d);
+    d.is_real_data = (d.is_real_data == 'true');
+    var meantemp_info = await StationDataInfo.create(d);
+
+    let dirname_rain = 'F:/Lesson/Project/Dataset/Climate/upload_to_web/data/station/rain_rcp45/';
+    d = fs.readFileSync(dirname_rain+'Station_Info.json', 'utf8');
+    d = JSON.parse(d);
+    d.is_real_data = (d.is_real_data == 'true');
+    var rain_info = await StationDataInfo.create(d);
+    
+    console.log('meantemp');
+    var MeantempStationData = StationData('MPI_RCP45', 'meantemp', 'Daily');
+    var insert_meantemp = async(code) => {
+        for(let i=0; i<code.length; i++){
+            let s_code = code[i];
+            console.log(s_code);
+            let data = fs.readFileSync(dirname_meantemp+s_code+'.json', 'utf8');
+            data = JSON.parse(data);
+            for(let j=0; j<data.length; j++){
+                data[j].date = new Date(data[j].date);
+                data[j].value = Number(data[j].value);
+            };
+            await MeantempStationData.collection.insert(data);
+            data = null;
+        }
+    };
+    await insert_meantemp(meantemp_info.code);
+
+    console.log('rain');
+    var RainStationData = StationData('MPI_RCP45', 'rain', 'Daily');
+    var insert_rain = async(code) => {
+        for(let i=0; i<code.length; i++){
+            let s_code = code[i];
+            console.log(s_code);
+            let data = fs.readFileSync(dirname_rain+s_code+'.json', 'utf8');
+            data = JSON.parse(data);
+            for(let j=0; j<data.length; j++){
+                data[j].date = new Date(data[j].date);
+                data[j].value = Number(data[j].value);
+            };
+            await RainStationData.collection.insert(data);
+            data = null;
+        }
+    };
+    await insert_rain(rain_info.code);
+    
+});
+
+router.get('/station_rcp45_monthly', async (req, res, next) => {
+
+    res.send('monthly');
+    
+    var MeantempStationDaily = StationData('MPI_RCP45','meantemp','Daily');
+    var MeantempStationMonthly = StationData('MPI_RCP45','meantemp','Monthly');
+    var RainStationDaily = StationData('MPI_RCP45','rain','Daily');
+    var RainStationMonthly = StationData('MPI_RCP45','rain','Monthly');
+
+    var start_date = moment('2006-01-01');
+    var end_date = moment('2012-01-01');
+    for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'months')){
+        var startDate = new Date(m.format('YYYY-MM-')+'01');
+        var endDate = m.endOf('month').toDate();
+        
+        console.log("--------------------------");
+        console.log(startDate+' to '+endDate);
+
+        var meanMeantempValue = await MeantempStationDaily.getMeanValue(startDate, endDate);
+        await MeantempStationMonthly.create(meanMeantempValue);
+
+        var sumRainValue = await RainStationDaily.getSumValue(startDate, endDate);
+        await RainStationMonthly.create(sumRainValue);
+    }
+    
+});
+
+router.get('/station_rcp45_yearly', async (req, res, next) => {
+
+    res.send('yearly');
+    
+    var MeantempStationDaily = StationData('MPI_RCP45','meantemp','Monthly');
+    var MeantempStationMonthly = StationData('MPI_RCP45','meantemp','Yearly');
+    var RainStationDaily = StationData('MPI_RCP45','rain','Monthly');
+    var RainStationMonthly = StationData('MPI_RCP45','rain','Yearly');
+
+    var start_date = moment('2006-01-01');
+    var end_date = moment('2012-01-01');
+    for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'years')){
+        var startDate = new Date(m.format('YYYY')+'-01-01');
+        var endDate = m.endOf('year').toDate();
+        
+        console.log("--------------------------");
+        console.log(startDate+' to '+endDate);
+
+        var meanMeantempValue = await MeantempStationDaily.getMeanValue(startDate, endDate);
+        await MeantempStationMonthly.create(meanMeantempValue);
+
+        var sumRainValue = await RainStationDaily.getSumValue(startDate, endDate);
+        await RainStationMonthly.create(sumRainValue);
+    }
+    
+});
+
+router.get('/predict', async (req, res, next) => {
+    res.send('uploading predict');
+    
+    let dirname_meantemp = 'F:/Lesson/Project/Dataset/Climate/data/3x3/station_temperature_use_tas_tsmax_sfcwindmax_ps/to_web/';
+    var meantemp_info = await StationDataInfo.findOne({variable:"meantemp"});
+    console.log(meantemp_info.code);
+    
+    
+    console.log('meantemp');
+    var MeantempPredictData = PredictData('MPI_RF', 'meantemp', 'Daily');
+    var MeantempPredictData2 = PredictData('MPI_RCP45', 'meantemp', 'Daily');
+    var insert_meantemp = async(code) => {
+        for(let i=0; i<code.length; i++){
+            let s_code = code[i];
+            console.log(s_code);
+            let data = fs.readFileSync(dirname_meantemp+s_code+'-training.json', 'utf8');
+            let data2 = fs.readFileSync(dirname_meantemp+s_code+'-forecasting.json', 'utf8');
+
+            console.log("Read training");
+            data = JSON.parse(data);
+            console.log("Read forecasting");
+            data2 = JSON.parse(data2);
+
+            for(let j=0; j<data.length; j++){
+                data[j].date = new Date(data[j].date);
+                data[j].value = Number(data[j].value);
+            };
+            for(let j=0; j<data2.length; j++){
+                data2[j].date = new Date(data2[j].date);
+                data2[j].value = Number(data2[j].value);
+            };
+
+            console.log("Insert");
+            await Promise.all([MeantempPredictData.collection.insert(data), MeantempPredictData2.collection.insert(data2)]);
+            data = null;
+            data2 = null;
+        }
+    };
+    await insert_meantemp(meantemp_info.code);
+    
+
+    /*
+    console.log('rain');
+    var RainStationData = StationData('MPI_RF', 'rain', 'Daily');
+    var insert_rain = async(code) => {
+        for(let i=0; i<code.length; i++){
+            let s_code = code[i];
+            console.log(s_code);
+            let data = fs.readFileSync(dirname_rain+s_code+'.json', 'utf8');
+            data = JSON.parse(data);
+            await RainStationData.create(data);
+            data = null;
+        }
+    };
+    await insert_rain(rain_info.code);
+    */
+});
+
+router.get('/predict_monthly', async (req, res, next) => {
+
+    res.send('monthly');
+    
+    var MeantempPredictDaily = PredictData('MPI_RF','meantemp','Daily');
+    var MeantempPredictMonthly = PredictData('MPI_RF','meantemp','Monthly');
+    var MeantempPredictDaily2 = PredictData('MPI_RCP45','meantemp','Daily');
+    var MeantempPredictMonthly2 = PredictData('MPI_RCP45','meantemp','Monthly');
+    var start_date = moment('1970-01-01');
+    var end_date = moment('2006-01-01');
+    
+    for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'months')){
+        var startDate = new Date(m.format('YYYY-MM-')+'01');
+        var endDate = m.endOf('month').toDate();
+        
+        console.log("--------------------------");
+        console.log(startDate+' to '+endDate);
+
+        var meanMeantempValue = await MeantempPredictDaily.getMeanValue(startDate, endDate);
+        await MeantempPredictMonthly.create(meanMeantempValue);
+        
+
+        
+        //var sumRainValue = await RainStationDaily.getSumValue(startDate, endDate);
+        //await RainStationMonthly.create(sumRainValue);
+        
+        
+    }
+    
+
+    
+    start_date = moment('2006-01-01');
+    end_date = moment('2100-01-01');
+    for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'months')){
+        var startDate = new Date(m.format('YYYY-MM-')+'01');
+        var endDate = m.endOf('month').toDate();
+        
+        console.log("--------------------------");
+        console.log(startDate+' to '+endDate);
+
+        var meanMeantempValue2 = await MeantempPredictDaily2.getMeanValue(startDate, endDate);
+        await MeantempPredictMonthly2.create(meanMeantempValue2);
+    }
+    
+});
+
+router.get('/predict_yearly', async (req, res, next) => {
+
+    res.send('monthly');
+    
+    var MeantempPredictDaily = PredictData('MPI_RF','meantemp','Monthly');
+    var MeantempPredictMonthly = PredictData('MPI_RF','meantemp','Yearly');
+    var MeantempPredictDaily2 = PredictData('MPI_RCP45','meantemp','Monthly');
+    var MeantempPredictMonthly2 = PredictData('MPI_RCP45','meantemp','Yearly');
+
+    var start_date = moment('1970-01-01');
+    var end_date = moment('2006-01-01');
+    for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'years')){
+        var startDate = new Date(m.format('YYYY')+'-01-01');
+        var endDate = m.endOf('year').toDate();
+        console.log(startDate+' to '+endDate);
+        
+        console.log("--------------------------");
+        console.log(startDate+' to '+endDate);
+
+        var meanMeantempValue = await MeantempPredictDaily.getMeanValue(startDate, endDate);
+        await MeantempPredictMonthly.create(meanMeantempValue);
+        
+
+        
+        //var sumRainValue = await RainStationDaily.getSumValue(startDate, endDate);
+        //await RainStationMonthly.create(sumRainValue);
+        
+        
+    }
+    
+
+    
+    start_date = moment('2006-01-01');
+    end_date = moment('2100-01-01');
+    for(let m = moment(start_date); m.isBefore(end_date, 'days'); m.add(1, 'years')){
+        var startDate = new Date(m.format('YYYY')+'-01-01');
+        var endDate = m.endOf('year').toDate();
+        
+        console.log("--------------------------");
+        console.log(startDate+' to '+endDate);
+
+        var meanMeantempValue2 = await MeantempPredictDaily2.getMeanValue(startDate, endDate);
+        await MeantempPredictMonthly2.create(meanMeantempValue2);
+    }
+    
+});
+
+
 
 router.get('/monthly', async (req, res, next) => {
 
